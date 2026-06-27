@@ -31,6 +31,18 @@ export class CombatSystem {
           }
         }
       }
+
+      if (cfg.passiveEffect === 'fire-rate-boost') {
+        const r2 = cfg.passiveRadius * cfg.passiveRadius;
+        for (const active of towers) {
+          if (active === passive || active.config.isPassive) continue;
+          const dx = active.x - passive.x;
+          const dy = active.y - passive.y;
+          if (dx * dx + dy * dy <= r2) {
+            active.applyFireRateBoost(cfg.passiveStrength);
+          }
+        }
+      }
     }
 
     // Psychic enemies debuff nearby towers (reduce fire rate)

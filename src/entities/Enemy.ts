@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { EnemyConfig, EnemyType, Vec2 } from '../types';
+import type { DamageType, EnemyConfig, EnemyType, Vec2 } from '../types';
 
 export abstract class Enemy extends Phaser.GameObjects.Container {
   readonly enemyType: EnemyType;
@@ -17,6 +17,8 @@ export abstract class Enemy extends Phaser.GameObjects.Container {
 
   private healthBar!: Phaser.GameObjects.Graphics;
   protected bodyGfx!: Phaser.GameObjects.Graphics;
+  private hitSlowTimer: number = 0;
+  private hitSlowFactor: number = 1;
 
   constructor(scene: Phaser.Scene, waypoints: Vec2[], config: EnemyConfig) {
     super(scene, waypoints[0].x, waypoints[0].y);
@@ -57,7 +59,22 @@ export abstract class Enemy extends Phaser.GameObjects.Container {
     this.healthBar.fillRect(-w / 2, y, w * pct, h);
   }
 
-  takeDamage(amount: number, damageType: 'ballistic' | 'energy' | 'explosive' | 'electric'): void {
+  heal(amount: number): void {
+    if (this.isDead) return;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    this.drawHealthBar();
+  }
+
+  applyHitSlow(speedFactor: number, durationMs: number): void {
+    if (speedFactor < this.hitSlowFactor) {
+      this.hitSlowFactor = speedFactor;
+      this.hitSlowTimer = durationMs;
+    } else if (speedFactor === this.hitSlowFactor) {
+      this.hitSlowTimer = Math.max(this.hitSlowTimer, durationMs);
+    }
+  }
+
+  takeDamage(amount: number, damageType: DamageType): void {
     if (this.isDead) return;
 
     let effective = amount;
@@ -82,7 +99,15 @@ export abstract class Enemy extends Phaser.GameObjects.Container {
   update(_time: number, delta: number): void {
     if (this.isDead || this.hasReachedEnd) return;
 
-    this.speed = this.baseSpeed * this.slowFactor;
+    if (this.hitSlowTimer > 0) {
+      this.hitSlowTimer -= delta;
+      if (this.hitSlowTimer <= 0) {
+        this.hitSlowTimer = 0;
+        this.hitSlowFactor = 1;
+      }
+    }
+
+    this.speed = this.baseSpeed * Math.min(this.slowFactor, this.hitSlowFactor);
     this.slowFactor = 1; // slow fields must reapply continuously each frame
 
     const target = this.waypoints[this.waypointIndex];

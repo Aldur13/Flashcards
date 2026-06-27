@@ -1,6 +1,8 @@
 import type { EnemyConfig, EnemyType } from '../types';
 
+// Each alien type mirrors an orc archetype from classic tower defense.
 export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
+  // -- Grunt tier --
   crawler: {
     type: 'crawler',
     displayName: 'Crawler',
@@ -10,23 +12,71 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     isFlying: false,
     reward: 8,
     resistances: {},
+    baseReachDamage: 1,
     tint: 0x7fff00,
     scale: 0.8,
   },
+  // Fast frenzied alien — mirrors orc berserker. Deals 2 base damage if it gets through.
+  berserker: {
+    type: 'berserker',
+    displayName: 'Berserker',
+    maxHp: 50,
+    speed: 200,
+    armor: 0,
+    isFlying: false,
+    reward: 14,
+    resistances: {},
+    baseReachDamage: 2,
+    tint: 0xff3300,
+    scale: 0.85,
+  },
+  // -- Heavy tier --
   brute: {
     type: 'brute',
     displayName: 'Brute',
     maxHp: 400,
     speed: 55,
-    armor: 0.5, // 50% ballistic reduction
+    armor: 0.5,
     isFlying: false,
     reward: 25,
-    resistances: {
-      electric: 0.7, // insulated exoskeleton
-    },
+    resistances: { electric: 0.7 },
+    baseReachDamage: 2,
     tint: 0xa0522d,
     scale: 1.4,
   },
+  // Cyclic phase shield — mirrors orc shieldbearer. Energy bypasses shield.
+  shielder: {
+    type: 'shielder',
+    displayName: 'Shielder',
+    maxHp: 280,
+    speed: 70,
+    armor: 0.2,
+    isFlying: false,
+    reward: 22,
+    resistances: { fire: 0.6 },
+    baseReachDamage: 2,
+    shieldCycleDuration: 3000,
+    shieldDownDuration: 1000,
+    shieldDamageReduction: 0.15, // takes 85% less damage while shielded
+    tint: 0x00aaff,
+    scale: 1.2,
+  },
+  // Massive regenerating tank — mirrors orc troll. Heals 8 HP/s.
+  titan: {
+    type: 'titan',
+    displayName: 'Titan',
+    maxHp: 1200,
+    speed: 28,
+    armor: 0.35,
+    isFlying: false,
+    reward: 80,
+    resistances: { explosive: 0.4 },
+    baseReachDamage: 3,
+    regenPerSecond: 8,
+    tint: 0x556b2f,
+    scale: 2.0,
+  },
+  // -- Aerial tier --
   drone: {
     type: 'drone',
     displayName: 'Drone',
@@ -35,12 +85,29 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     armor: 0,
     isFlying: true,
     reward: 15,
-    resistances: {
-      explosive: 0.3,
-    },
+    resistances: { explosive: 0.3 },
+    baseReachDamage: 1,
     tint: 0x00bfff,
     scale: 0.7,
   },
+  // -- Support tier --
+  // Heals nearby allies 20 HP/s — mirrors orc shaman.
+  healer: {
+    type: 'healer',
+    displayName: 'Healer',
+    maxHp: 180,
+    speed: 60,
+    armor: 0.1,
+    isFlying: false,
+    reward: 35,
+    resistances: {},
+    baseReachDamage: 1,
+    healRadius: 110,
+    healPerSecond: 20,
+    tint: 0x00ff88,
+    scale: 0.95,
+  },
+  // Debuffs nearby towers — mirrors orc witch doctor.
   psychic: {
     type: 'psychic',
     displayName: 'Psychic',
@@ -50,11 +117,29 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     isFlying: false,
     reward: 30,
     resistances: {},
+    baseReachDamage: 1,
     debuffRadius: 140,
-    debuffStrength: 0.4, // reduces fire rate by 40% in radius
+    debuffStrength: 0.4,
     tint: 0xda70d6,
     scale: 1.0,
   },
+  // Brief invulnerability phases — mirrors orc assassin / shadow.
+  infiltrator: {
+    type: 'infiltrator',
+    displayName: 'Infiltrator',
+    maxHp: 120,
+    speed: 155,
+    armor: 0,
+    isFlying: false,
+    reward: 28,
+    resistances: {},
+    baseReachDamage: 1,
+    phaseInterval: 2800,
+    phaseDuration: 600,
+    tint: 0xbbbbbb,
+    scale: 0.75,
+  },
+  // -- Boss tier --
   mothership: {
     type: 'mothership',
     displayName: 'Mothership',
@@ -63,10 +148,8 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     armor: 0.3,
     isFlying: true,
     reward: 200,
-    resistances: {
-      ballistic: 0.4,
-      electric: 0.5,
-    },
+    resistances: { ballistic: 0.4, electric: 0.5 },
+    baseReachDamage: 5,
     tint: 0xff1493,
     scale: 2.2,
   },

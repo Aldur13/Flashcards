@@ -9,6 +9,8 @@ export interface ProjectileConfig {
   color: number;
   splashRadius?: number;
   chainCount?: number;
+  slowOnHit?: number;       // speed multiplier applied on impact (e.g. 0.4 = enemy slowed to 40% speed)
+  slowHitDuration?: number; // ms the hit-slow lasts
   allEnemies: Enemy[];
 }
 
@@ -64,6 +66,9 @@ export class Projectile extends Phaser.GameObjects.Graphics {
       this.applyChain();
     } else {
       this.target.takeDamage(this.cfg.damage, this.cfg.damageType);
+      if (this.cfg.slowOnHit !== undefined && this.cfg.slowHitDuration) {
+        this.target.applyHitSlow(this.cfg.slowOnHit, this.cfg.slowHitDuration);
+      }
     }
 
     this.spawnImpactEffect();
@@ -78,6 +83,9 @@ export class Projectile extends Phaser.GameObjects.Graphics {
       const dy = enemy.y - this.target.y;
       if (dx * dx + dy * dy <= r * r) {
         enemy.takeDamage(this.cfg.damage, this.cfg.damageType);
+        if (this.cfg.slowOnHit !== undefined && this.cfg.slowHitDuration) {
+          enemy.applyHitSlow(this.cfg.slowOnHit, this.cfg.slowHitDuration);
+        }
       }
     }
   }

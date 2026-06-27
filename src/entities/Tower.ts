@@ -152,6 +152,8 @@ export abstract class Tower extends Phaser.GameObjects.Container {
       color: this.config.projectileColor,
       splashRadius: this.config.splashRadius,
       chainCount: this.config.chainCount,
+      slowOnHit: this.config.slowOnHit,
+      slowHitDuration: this.config.slowHitDuration,
       allEnemies,
     });
   }

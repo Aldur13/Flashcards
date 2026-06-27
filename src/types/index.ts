@@ -1,22 +1,48 @@
 export type TowerType =
+  // Firepower branch
   | 'machine-gun'
+  | 'chaingun'
   | 'railgun'
   | 'sniper-nest'
+  | 'anti-materiel-rifle'
+  | 'flamethrower'
+  | 'incinerator'
+  | 'mortar'
+  | 'howitzer'
+  // Area-control branch
   | 'tesla-coil'
   | 'arc-field'
   | 'ion-cannon'
   | 'missile-pod'
   | 'cluster-volley'
   | 'anti-air-battery'
+  | 'freeze-ray'
+  | 'cryo-cannon'
+  | 'gravity-well'
+  | 'singularity'
+  // Support branch
   | 'watchtower'
+  | 'radar-station'
+  | 'command-bunker'
   | 'shield-generator'
   | 'dome-barrier'
+  | 'ammo-depot'
   | 'repair-drone-bay'
   | 'field-hospital';
 
-export type EnemyType = 'crawler' | 'brute' | 'drone' | 'psychic' | 'mothership';
+export type EnemyType =
+  | 'crawler'
+  | 'berserker'
+  | 'brute'
+  | 'shielder'
+  | 'titan'
+  | 'drone'
+  | 'healer'
+  | 'psychic'
+  | 'infiltrator'
+  | 'mothership';
 
-export type DamageType = 'ballistic' | 'energy' | 'explosive' | 'electric';
+export type DamageType = 'ballistic' | 'energy' | 'explosive' | 'electric' | 'fire';
 
 export type TechBranch = 'firepower' | 'area-control' | 'support';
 
@@ -34,14 +60,18 @@ export interface TowerConfig {
   cost: number;
   damage: number;
   range: number;
-  fireRate: number; // shots per second
+  fireRate: number;
   damageType: DamageType;
   projectileSpeed: number;
   projectileColor: number;
   splashRadius?: number;
   chainCount?: number;
+  slowOnHit?: number;       // 0-1: speed multiplier applied on hit (e.g. 0.4 = 60% slow)
+  slowHitDuration?: number; // ms the hit-slow lasts
+  isFlameCone?: boolean;    // fires in a cone rather than a projectile
+  flameAngle?: number;      // half-cone angle in radians
   isPassive: boolean;
-  passiveEffect?: 'range-boost' | 'slow-field';
+  passiveEffect?: 'range-boost' | 'slow-field' | 'fire-rate-boost';
   passiveRadius?: number;
   passiveStrength?: number;
   isAntiAir: boolean;
@@ -58,13 +88,23 @@ export interface EnemyConfig {
   type: EnemyType;
   displayName: string;
   maxHp: number;
-  speed: number; // pixels per second
-  armor: number; // 0-1 ballistic damage reduction
+  speed: number;
+  armor: number;
   isFlying: boolean;
-  reward: number; // RP on kill
+  reward: number;
   resistances: Partial<Record<DamageType, number>>;
+  baseReachDamage: number;     // HP subtracted from player base when this enemy gets through
+  // Optional special mechanics
   debuffRadius?: number;
-  debuffStrength?: number; // 0-1 fire rate reduction
+  debuffStrength?: number;
+  healRadius?: number;
+  healPerSecond?: number;
+  regenPerSecond?: number;
+  phaseInterval?: number;
+  phaseDuration?: number;
+  shieldCycleDuration?: number;
+  shieldDownDuration?: number;
+  shieldDamageReduction?: number;
   tint: number;
   scale: number;
 }
@@ -72,14 +112,14 @@ export interface EnemyConfig {
 export interface WaveEntry {
   enemyType: EnemyType;
   count: number;
-  spawnInterval: number; // ms between each spawn
-  delay: number; // ms after wave start before first spawn of this group
+  spawnInterval: number;
+  delay: number;
 }
 
 export interface WaveConfig {
   waveNumber: number;
   entries: WaveEntry[];
-  bonusRp: number; // awarded if HP never drops during wave
+  bonusRp: number;
 }
 
 export interface MapConfig {
@@ -98,8 +138,8 @@ export interface MapConfig {
 export interface TechTreeNodeDef {
   type: TowerType;
   branch: TechBranch;
-  col: number; // column in tech tree grid
-  row: number; // row within branch
+  col: number;
+  row: number;
   prerequisites: TowerType[];
 }
 

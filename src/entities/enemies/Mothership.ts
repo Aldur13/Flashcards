@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Enemy } from '../Enemy';
 import { getEnemyConfig } from '../../data/enemies';
-import type { Vec2 } from '../../types';
+import type { DamageType, Vec2 } from '../../types';
 
 export class Mothership extends Enemy {
   private shieldPct: number = 1;
@@ -44,7 +44,7 @@ export class Mothership extends Enemy {
     this.shieldGraphic.fillCircle(0, 0, 38);
   }
 
-  takeDamage(amount: number, damageType: 'ballistic' | 'energy' | 'explosive' | 'electric'): void {
+  takeDamage(amount: number, damageType: DamageType): void {
     if (this.shieldPct > 0) {
       const absorbed = amount * this.shieldPct * 0.6;
       amount -= absorbed;

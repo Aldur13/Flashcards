@@ -2,18 +2,28 @@ import Phaser from 'phaser';
 import type { WaveConfig, Vec2, EnemyType } from '../types';
 import type { Enemy } from '../entities/Enemy';
 import { Crawler } from '../entities/enemies/Crawler';
+import { Berserker } from '../entities/enemies/Berserker';
 import { Brute } from '../entities/enemies/Brute';
+import { Shielder } from '../entities/enemies/Shielder';
+import { Titan } from '../entities/enemies/Titan';
 import { Drone } from '../entities/enemies/Drone';
+import { Healer } from '../entities/enemies/Healer';
 import { Psychic } from '../entities/enemies/Psychic';
+import { Infiltrator } from '../entities/enemies/Infiltrator';
 import { Mothership } from '../entities/enemies/Mothership';
 
 type EnemyFactory = (scene: Phaser.Scene, waypoints: Vec2[]) => Enemy;
 
 const FACTORIES: Record<EnemyType, EnemyFactory> = {
-  crawler: (s, w) => new Crawler(s, w),
-  brute: (s, w) => new Brute(s, w),
-  drone: (s, w) => new Drone(s, w),
-  psychic: (s, w) => new Psychic(s, w),
+  crawler:    (s, w) => new Crawler(s, w),
+  berserker:  (s, w) => new Berserker(s, w),
+  brute:      (s, w) => new Brute(s, w),
+  shielder:   (s, w) => new Shielder(s, w),
+  titan:      (s, w) => new Titan(s, w),
+  drone:      (s, w) => new Drone(s, w),
+  healer:     (s, w) => new Healer(s, w),
+  psychic:    (s, w) => new Psychic(s, w),
+  infiltrator:(s, w) => new Infiltrator(s, w),
   mothership: (s, w) => new Mothership(s, w),
 };
 
@@ -84,7 +94,7 @@ export class WaveManager {
 
     enemy.on('reachedEnd', (e: Enemy) => {
       this.removeEnemy(e);
-      this.onEnemyReachedEnd(e, 1);
+      this.onEnemyReachedEnd(e, e.config.baseReachDamage);
       this.checkWaveComplete();
     });
 
@@ -114,6 +124,23 @@ export class WaveManager {
   update(time: number, delta: number): void {
     for (const enemy of [...this.activeEnemies]) {
       enemy.update(time, delta);
+    }
+
+    // Healer enemies restore HP to nearby allies
+    const liveEnemies = this.activeEnemies.filter((e) => !e.isDead && !e.hasReachedEnd);
+    for (const healer of liveEnemies) {
+      const cfg = healer.config;
+      if (cfg.type !== 'healer' || !cfg.healRadius || !cfg.healPerSecond) continue;
+      const healAmount = cfg.healPerSecond * delta / 1000;
+      const r2 = cfg.healRadius * cfg.healRadius;
+      for (const ally of liveEnemies) {
+        if (ally === healer) continue;
+        const dx = ally.x - healer.x;
+        const dy = ally.y - healer.y;
+        if (dx * dx + dy * dy <= r2) {
+          ally.heal(healAmount);
+        }
+      }
     }
   }
 

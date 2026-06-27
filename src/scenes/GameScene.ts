@@ -8,6 +8,8 @@ import { MachineGunTower } from '../entities/towers/MachineGunTower';
 import { TeslaTower } from '../entities/towers/TeslaTower';
 import { MissilePodTower } from '../entities/towers/MissilePodTower';
 import { SniperNestTower } from '../entities/towers/SniperNestTower';
+import { FlamethrowerTower } from '../entities/towers/FlamethrowerTower';
+import { GenericTower } from '../entities/towers/GenericTower';
 import { WaveManager } from '../systems/WaveManager';
 import { TechTreeManager } from '../systems/TechTreeManager';
 import { CombatSystem } from '../systems/CombatSystem';
@@ -15,10 +17,12 @@ import { HUD } from '../ui/HUD';
 import { TechTreeOverlay } from '../ui/TechTree';
 
 const TOWER_FACTORIES: Partial<Record<TowerType, (scene: Phaser.Scene, x: number, y: number) => Tower>> = {
-  'machine-gun': (s, x, y) => new MachineGunTower(s, x, y),
-  'tesla-coil': (s, x, y) => new TeslaTower(s, x, y),
-  'missile-pod': (s, x, y) => new MissilePodTower(s, x, y),
-  'sniper-nest': (s, x, y) => new SniperNestTower(s, x, y),
+  'machine-gun':  (s, x, y) => new MachineGunTower(s, x, y),
+  'tesla-coil':   (s, x, y) => new TeslaTower(s, x, y),
+  'missile-pod':  (s, x, y) => new MissilePodTower(s, x, y),
+  'sniper-nest':  (s, x, y) => new SniperNestTower(s, x, y),
+  'flamethrower': (s, x, y) => new FlamethrowerTower(s, x, y, 'flamethrower'),
+  'incinerator':  (s, x, y) => new FlamethrowerTower(s, x, y, 'incinerator'),
 };
 
 export class GameScene extends Phaser.Scene {
@@ -78,7 +82,7 @@ export class GameScene extends Phaser.Scene {
     const waves = WAVE_CONFIGS[this.mapConfig.key] ?? WAVE_CONFIGS['outpost-bravo'];
     this.waveManager = new WaveManager(this, waves, this.mapConfig.waypoints);
     this.waveManager.onEnemyDied = (_, reward) => this.onEnemyKilled(reward);
-    this.waveManager.onEnemyReachedEnd = () => this.onEnemyReachedEnd();
+    this.waveManager.onEnemyReachedEnd = (_enemy, damage) => this.onEnemyReachedEnd(damage);
     this.waveManager.onWaveComplete = (waveNum, bonus) => this.onWaveComplete(waveNum, bonus);
 
     this.combatSystem = new CombatSystem();
@@ -255,12 +259,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     const factory = TOWER_FACTORIES[this.placingTowerType];
-    if (!factory) {
-      // Fallback: use MachineGun visual for unimplemented types
-      const t = new MachineGunTower(this, slot.x, slot.y);
+    if (factory) {
+      const t = factory(this, slot.x, slot.y);
       this.towers.push(t);
     } else {
-      const t = factory(this, slot.x, slot.y);
+      const t = new GenericTower(this, slot.x, slot.y, this.placingTowerType);
       this.towers.push(t);
     }
 
@@ -286,8 +289,8 @@ export class GameScene extends Phaser.Scene {
     this.score += reward * 10;
   }
 
-  private onEnemyReachedEnd(): void {
-    this.hp = Math.max(0, this.hp - 1);
+  private onEnemyReachedEnd(damage: number): void {
+    this.hp = Math.max(0, this.hp - damage);
     this.hud.updateHp(this.hp, this.maxHp);
     this.cameras.main.shake(150, 0.008);
 

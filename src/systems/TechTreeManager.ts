@@ -2,25 +2,38 @@ import type { TowerType, TechBranch, TechTreeNodeDef } from '../types';
 import { TOWER_CONFIGS, getStarterTowers } from '../data/towers';
 
 const TECH_TREE_NODES: TechTreeNodeDef[] = [
-  // Firepower branch (col 0-2)
-  { type: 'machine-gun', branch: 'firepower', col: 0, row: 0, prerequisites: [] },
-  { type: 'railgun', branch: 'firepower', col: 1, row: 0, prerequisites: ['machine-gun'] },
-  { type: 'sniper-nest', branch: 'firepower', col: 0, row: 1, prerequisites: [] },
+  // ── Firepower branch ──
+  { type: 'machine-gun',         branch: 'firepower', col: 0, row: 0, prerequisites: [] },
+  { type: 'chaingun',            branch: 'firepower', col: 1, row: 0, prerequisites: ['machine-gun'] },
+  { type: 'railgun',             branch: 'firepower', col: 2, row: 0, prerequisites: ['chaingun'] },
+  { type: 'sniper-nest',         branch: 'firepower', col: 0, row: 1, prerequisites: [] },
+  { type: 'anti-materiel-rifle', branch: 'firepower', col: 1, row: 1, prerequisites: ['sniper-nest'] },
+  { type: 'flamethrower',        branch: 'firepower', col: 0, row: 2, prerequisites: [] },
+  { type: 'incinerator',         branch: 'firepower', col: 1, row: 2, prerequisites: ['flamethrower'] },
+  { type: 'mortar',              branch: 'firepower', col: 0, row: 3, prerequisites: [] },
+  { type: 'howitzer',            branch: 'firepower', col: 1, row: 3, prerequisites: ['mortar'] },
 
-  // Area Control branch (col 0-3)
-  { type: 'tesla-coil', branch: 'area-control', col: 0, row: 0, prerequisites: [] },
-  { type: 'arc-field', branch: 'area-control', col: 1, row: 0, prerequisites: ['tesla-coil'] },
-  { type: 'ion-cannon', branch: 'area-control', col: 2, row: 0, prerequisites: ['arc-field'] },
-  { type: 'missile-pod', branch: 'area-control', col: 0, row: 1, prerequisites: [] },
-  { type: 'cluster-volley', branch: 'area-control', col: 1, row: 1, prerequisites: ['missile-pod'] },
-  { type: 'anti-air-battery', branch: 'area-control', col: 2, row: 1, prerequisites: ['cluster-volley'] },
+  // ── Area Control branch ──
+  { type: 'tesla-coil',          branch: 'area-control', col: 0, row: 0, prerequisites: [] },
+  { type: 'arc-field',           branch: 'area-control', col: 1, row: 0, prerequisites: ['tesla-coil'] },
+  { type: 'ion-cannon',          branch: 'area-control', col: 2, row: 0, prerequisites: ['arc-field'] },
+  { type: 'missile-pod',         branch: 'area-control', col: 0, row: 1, prerequisites: [] },
+  { type: 'cluster-volley',      branch: 'area-control', col: 1, row: 1, prerequisites: ['missile-pod'] },
+  { type: 'anti-air-battery',    branch: 'area-control', col: 2, row: 1, prerequisites: ['cluster-volley'] },
+  { type: 'freeze-ray',          branch: 'area-control', col: 0, row: 2, prerequisites: [] },
+  { type: 'cryo-cannon',         branch: 'area-control', col: 1, row: 2, prerequisites: ['freeze-ray'] },
+  { type: 'gravity-well',        branch: 'area-control', col: 0, row: 3, prerequisites: [] },
+  { type: 'singularity',         branch: 'area-control', col: 1, row: 3, prerequisites: ['gravity-well'] },
 
-  // Support branch
-  { type: 'watchtower', branch: 'support', col: 0, row: 0, prerequisites: [] },
-  { type: 'shield-generator', branch: 'support', col: 0, row: 1, prerequisites: [] },
-  { type: 'dome-barrier', branch: 'support', col: 1, row: 1, prerequisites: ['shield-generator'] },
-  { type: 'repair-drone-bay', branch: 'support', col: 1, row: 0, prerequisites: ['watchtower'] },
-  { type: 'field-hospital', branch: 'support', col: 2, row: 0, prerequisites: ['repair-drone-bay'] },
+  // ── Support branch ──
+  { type: 'watchtower',          branch: 'support', col: 0, row: 0, prerequisites: [] },
+  { type: 'radar-station',       branch: 'support', col: 1, row: 0, prerequisites: ['watchtower'] },
+  { type: 'command-bunker',      branch: 'support', col: 2, row: 0, prerequisites: ['radar-station'] },
+  { type: 'shield-generator',    branch: 'support', col: 0, row: 1, prerequisites: [] },
+  { type: 'dome-barrier',        branch: 'support', col: 1, row: 1, prerequisites: ['shield-generator'] },
+  { type: 'ammo-depot',          branch: 'support', col: 0, row: 2, prerequisites: [] },
+  { type: 'repair-drone-bay',    branch: 'support', col: 1, row: 2, prerequisites: ['ammo-depot'] },
+  { type: 'field-hospital',      branch: 'support', col: 2, row: 2, prerequisites: ['repair-drone-bay'] },
 ];
 
 export class TechTreeManager {
