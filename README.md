@@ -4,7 +4,7 @@ Ett läxförhör om de första flodkulturerna. Eleven skriver svaret med egna or
 en AI rättar mot facit, och appen håller reda på vilka frågor som sitter och
 vilka som behöver repeteras.
 
-**Sidan ligger här:** https://aldur13.github.io/flashcards/
+**Sidan ligger här:** https://aldur13.github.io/Flashcards/
 
 Hela appen är en enda fil, `index.html`. Inget bygge, inga beroenden, ingen
 server — den fungerar direkt i webbläsaren.
