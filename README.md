@@ -25,24 +25,59 @@ utom själva AI-tjänsten.
 
 Appen kan hämta sin nyckel på två sätt, och båda fungerar samtidigt.
 
-### 1. Delad nyckel (valfritt)
+### 1. Delade nycklar (`keys.json`)
 
-Lägg in en nyckel i `index.html` så fungerar sidan direkt för alla som
-besöker den, utan att någon behöver skaffa något eget. Leta upp raden:
+Sidan hämtar en lista med delade nycklar ur filen **`keys.json`**, som ligger
+bredvid `index.html`. Alla som öppnar sidan får samma lista, så ingen behöver
+skaffa något eget för att komma igång.
 
-```js
-const SHARED={prov:'groq',key:'',model:'openai/gpt-oss-20b',model2:'openai/gpt-oss-120b'};
+```json
+{
+  "nycklar": [
+    { "namn": "Skolans Groq-nyckel", "prov": "groq", "key": "gsk_..." },
+    { "namn": "Ellens Gemini-nyckel", "prov": "gemini", "key": "AIza..." }
+  ]
+}
 ```
 
-och skriv in nyckeln mellan citattecknen efter `key:`. Lämna den tom för att
-stänga av delad nyckel.
+`namn` är etiketten som visas i listan, `prov` är tjänsten (`groq`, `gemini`,
+`kimi`, `anthropic`, `openai`, `mistral`, `openrouter`, `hf`) och `key` är
+nyckeln. `model` och `model2` är valfria — utan dem används tjänstens
+standardmodeller.
 
-> **Läs det här först.** Sidan är publik, så en nyckel som ligger i filen går
-> att läsa i källkoden av vem som helst som besöker sidan. Använd **bara** en
-> gratisnyckel utan betalkort — en Groq-nyckel från
-> [console.groq.com](https://console.groq.com) kräver bara en e-postadress.
+**Så lägger man till en nyckel:** under fliken **AI** finns *Lägg till en nyckel
+som alla får*. Fyll i namn, tjänst och nyckel, tryck **Kopiera rad** och sedan
+**Öppna keys.json** — GitHubs redigerare öppnas, klistra in raden bland de andra
+och spara. Nyckeln är delad för alla nästa gång sidan laddas. Det går lika bra
+att redigera `keys.json` direkt.
+
+Vill man hellre lägga nycklarna i `index.html` finns arrayen `SHARED_KEYS` högst
+upp i skriptet. Den slås ihop med listan från `keys.json`.
+
+#### Hur sidan väljer nyckel
+
+- Nycklarna provas uppifrån och ner. Blir en nyckel **avvisad** (fel nyckel,
+  slut på krediter, modellen finns inte) hoppar sidan direkt vidare till nästa
+  och gör om anropet — eleven märker ingenting.
+- Den nyckel som svarar blir **standard**: nästa fråga, och nästa besök, börjar
+  där. Det syns som *Används nu* i listan.
+- En nyckel som bara är **överbelastad** (för många frågor på kort tid) döms inte
+  ut. Den hoppas över i fem minuter och provas sedan igen.
+- Är alla nycklar utdömda provar sidan hela listan igen istället för att ge upp,
+  så en nyckel som börjar fungera igen fångas upp av sig själv.
+- **Testa alla** under fliken AI pingar varje nyckel och visar vilka som lever.
+- Minnet av vilka nycklar som slutat fungera är per webbläsare. Utan en server
+  kan en elevs resultat inte nå de andra — var och en upptäcker en död nyckel
+  första gången den används, och hoppar sedan över den.
+
+> **Läs det här först.** `keys.json` är publik. Nycklarna där går att läsa av
+> vem som helst som besöker sidan, och att använda till annat. Lägg **bara** in
+> gratisnycklar utan betalkort — en Groq-nyckel från
+> [console.groq.com](https://console.groq.com) eller en Gemini-nyckel från
+> [aistudio.google.com](https://aistudio.google.com) kräver bara ett konto.
 > Lägg **aldrig** in en nyckel som är kopplad till fakturering (OpenAI,
-> Anthropic, Kimi), då kan någon annan handla för dina pengar.
+> Anthropic, Kimi) — då kan någon annan handla för dina pengar. Sidan hindrar
+> det inte, men den varnar rött både i listan och när man lägger till.
 
 ### 2. Egen nyckel
 
@@ -65,7 +100,7 @@ eller en modell man kör själv (Ollama, LM Studio).
   tjänsten är nere.
 - En nyckel som avvisas flaggas, och en ruta på **Öva**-fliken talar om det
   istället för att rättningen bara tystnar.
-- Finns en delad nyckel tar den över automatiskt när elevens egen nyckel inte
+- Finns delade nycklar tar de över automatiskt när elevens egen nyckel inte
   godtas, så pluggandet aldrig stannar. Rättningen märks då med
   *"rättad med den delade nyckeln"*.
 - **Testa**-knappen under fliken AI gör ett riktigt anrop och rapporterar

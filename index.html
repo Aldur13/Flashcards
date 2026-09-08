@@ -113,6 +113,33 @@ th{font-weight:500;font-size:12px;color:#8A836F}
       <p id="srchint" style="margin:0 0 16px;font-size:12px;color:#6A6558"></p>
     </div>
 
+    <div id="poolWrap" style="display:none;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 4px">
+        <p style="margin:0;font-family:'Fraunces',serif;font-size:17px">Delade nycklar</p>
+        <button class="act ghost" type="button" id="testall" style="flex:0 0 auto;padding:7px 12px;font-size:13px">Testa alla</button>
+      </div>
+      <p style="margin:0 0 10px;font-size:12px;color:#6A6558">Alla som öppnar sidan ser samma lista. Den översta som fungerar används — slutar den fungera hoppar sidan vidare till nästa av sig själv.</p>
+      <div id="poolList"></div>
+
+      <details id="addWrap" style="margin-top:14px">
+        <summary style="cursor:pointer;font-size:14px;color:var(--lapis)">Lägg till en nyckel som alla får</summary>
+        <p style="margin:10px 0 0;font-size:13px;color:#6A6558">De delade nycklarna ligger i filen <b>keys.json</b>. Fyll i fälten, kopiera raden och klistra in den i filen på GitHub. Nästa gång någon laddar sidan finns nyckeln där.</p>
+        <label class="lbl" for="np-namn">Namn på nyckeln</label>
+        <input id="np-namn" type="text" autocomplete="off" placeholder="T.ex. Ellens Groq-nyckel">
+        <label class="lbl" for="np-prov">Tjänst</label>
+        <select id="np-prov" aria-label="Tjänst för den delade nyckeln"></select>
+        <label class="lbl" for="np-key">Nyckel</label>
+        <input id="np-key" type="text" autocomplete="off" placeholder="Klistra in nyckeln">
+        <p id="np-warn" class="err" style="display:none"></p>
+        <label class="lbl">Raden att klistra in</label>
+        <pre id="np-out" style="white-space:pre-wrap;word-break:break-all;font-size:12px;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin:0"></pre>
+        <div class="row">
+          <button class="act ghost" type="button" id="np-copy">Kopiera rad</button>
+          <button class="act" type="button" id="np-open">Öppna keys.json</button>
+        </div>
+      </details>
+    </div>
+
     <div id="egenWrap">
     <label class="lbl" for="prov">Tjänst</label>
     <select id="prov" aria-label="AI-tjänst">
@@ -275,17 +302,96 @@ const PROV={
    snabb:'llama3.2', stark:'',
    hint:'För en modell du kör själv. Kör Ollama med OLLAMA_ORIGINS=* så webbläsaren släpps in.'}
 };
-/* ── DELAD NYCKEL ────────────────────────────────────────────────────────────
-   Klistra in en nyckel mellan citattecknen på raden nedan, så fungerar sidan
-   direkt för alla som besöker den — ingen behöver skaffa något eget.
-   Lämna den tom för att stänga av delad nyckel helt.
+/* ── DELADE NYCKLAR ──────────────────────────────────────────────────────────
+   Sidan hämtar en lista med delade nycklar ur filen keys.json, som ligger
+   bredvid den här filen. Alla som öppnar sidan får samma lista, och den som
+   vill lägga till en nyckel redigerar keys.json på GitHub — knappen "Lägg till
+   en nyckel" under fliken AI går direkt dit.
 
-   OBS: sidan är publik. En nyckel som ligger här går att läsa i källkoden av
-   vem som helst. Använd BARA en gratisnyckel utan betalkort (console.groq.com),
-   aldrig en nyckel som är kopplad till fakturering.                          */
-const SHARED={prov:'groq',key:'',model:'openai/gpt-oss-20b',model2:'openai/gpt-oss-120b'};
+   Slutar en nyckel fungera hoppar sidan automatiskt vidare till nästa i listan,
+   och den som fungerade blir standard från och med då.
 
-const harDelad=()=>!!(SHARED.key&&SHARED.key.trim()&&PROV[SHARED.prov]);
+   Arrayen nedan är valfri. Lägg nycklar där om du hellre redigerar den här
+   filen än keys.json — de slås ihop med listan därifrån.
+
+   OBS: både keys.json och den här filen är publika. Nycklarna går att läsa av
+   vem som helst som besöker sidan. Lägg BARA in gratisnycklar utan betalkort
+   (console.groq.com, aistudio.google.com), aldrig en nyckel som är kopplad
+   till fakturering.                                                          */
+const SHARED_KEYS=[];
+const GRATIS=['groq','gemini'];
+const POOLFIL='keys.json';
+
+let POOL=[];
+const pool=()=>POOL;
+const harDelad=()=>POOL.length>0;
+
+function poolId(e){return e.prov+':'+String(e.key).slice(-6);}
+function poolNormalisera(rader){
+  const ut=[];
+  (Array.isArray(rader)?rader:[]).forEach(r=>{
+    if(!r||typeof r!=='object')return;
+    const prov=String(r.prov||'').trim(), key=String(r.key||'').trim();
+    if(!key||!PROV[prov])return;
+    const e={
+      namn:String(r.namn||PROV[prov].namn).trim()||PROV[prov].namn,
+      prov, key,
+      model:String(r.model||'').trim()||PROV[prov].snabb||PROV[prov].modeller[0],
+      model2:String(r.model2||'').trim()
+    };
+    e.id=poolId(e);
+    if(!ut.some(x=>x.id===e.id))ut.push(e);
+  });
+  return ut;
+}
+async function laddaPool(){
+  let fran=[];
+  try{
+    const r=await fetch(POOLFIL+'?v='+Date.now(),{cache:'no-store'});
+    if(r.ok){
+      const d=await r.json();
+      fran=Array.isArray(d)?d:(d&&d.nycklar)||[];
+    }
+  }catch(e){ /* filen saknas eller är trasig — då blir listan bara kortare */ }
+  POOL=poolNormalisera([].concat(SHARED_KEYS,fran));
+}
+
+/* Vilken delad nyckel som gäller, och vilka som slutat fungera. Det här sparas
+   per webbläsare — utan en server kan en elevs resultat inte nå de andra. */
+function poolDoda(){
+  try{ return JSON.parse(localStorage.getItem('flod-pooldead')||'{}')||{}; }catch(e){ return {}; }
+}
+function poolSkrivDoda(m){
+  try{ localStorage.setItem('flod-pooldead',JSON.stringify(m)); }catch(e){}
+}
+function poolDodMarkera(id,orsak,upptagen){
+  const m=poolDoda();
+  m[id]={orsak:orsak||'',tid:new Date().toISOString(),till:upptagen?Date.now()+5*60*1000:0};
+  poolSkrivDoda(m);
+}
+function poolLevande(id){
+  const d=poolDoda()[id];
+  if(!d)return true;
+  if(d.till&&Date.now()>d.till)return true;   // "upptagen" går över av sig själv
+  return false;
+}
+function poolStandard(){return localStorage.getItem('flod-poolval')||'';}
+function poolSattStandard(id){
+  localStorage.setItem('flod-poolval',id);
+  const m=poolDoda();
+  if(m[id]){delete m[id];poolSkrivDoda(m);}
+}
+/* Standardnyckeln först, sedan de som lever, sist de döda — så att sidan
+   försöker igen istället för att ge upp när hela listan råkat bli utdömd. */
+function poolOrdning(){
+  const vald=poolStandard();
+  const std=POOL.filter(e=>e.id===vald);
+  const lev=POOL.filter(e=>e.id!==vald&&poolLevande(e.id));
+  const dod=POOL.filter(e=>e.id!==vald&&!poolLevande(e.id));
+  return std.concat(lev,dod);
+}
+function poolAktiv(){return poolOrdning()[0]||null;}
+
 function getSource(){
   const v=localStorage.getItem('flod-keysource');
   if(v==='delad')return harDelad()?'delad':'egen';
@@ -294,19 +400,22 @@ function getSource(){
 }
 function setSource(v){localStorage.setItem('flod-keysource',v);}
 function egenProv(){return localStorage.getItem('flod-prov')||'groq';}
-function getProv(){return getSource()==='delad'?SHARED.prov:egenProv();}
+function getProv(){
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.prov;}
+  return egenProv();
+}
 function getKey(){
-  if(getSource()==='delad')return SHARED.key.trim();
+  if(getSource()==='delad'){const a=poolAktiv();return a?a.key:'';}
   return (localStorage.getItem('flod-key-'+egenProv())||'').trim();
 }
 function getModel(){
   const p=getProv();
-  if(getSource()==='delad')return (SHARED.model||'').trim()||PROV[p].snabb||PROV[p].modeller[0];
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.model||PROV[p].snabb||PROV[p].modeller[0];}
   return localStorage.getItem('flod-model-'+p)||PROV[p].snabb||PROV[p].modeller[0];
 }
 function getModel2(){
   const p=getProv();
-  if(getSource()==='delad')return (SHARED.model2||'').trim();
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.model2||'';}
   const m=localStorage.getItem('flod-model2-'+p);return m===null?(PROV[p].stark||''):m.trim();
 }
 function getUrl(){const p=getProv();return p==='custom'?(localStorage.getItem('flod-base')||'').trim():PROV[p].url;}
@@ -322,7 +431,7 @@ function setKeyBad(p,txt){
 function renderKeyWarn(){
   const w=$('keywarn');if(!w)return;
   const txt=getSource()==='egen'?keyBad(egenProv()):'';
-  if(txt){$('keywarntext').textContent=txt+(harDelad()?' Rättningen använder den delade nyckeln så länge.':'');w.style.display='block';}
+  if(txt){$('keywarntext').textContent=txt+(harDelad()?' Rättningen använder de delade nycklarna så länge.':'');w.style.display='block';}
   else w.style.display='none';
 }
 
@@ -384,12 +493,12 @@ function render(){
 
 function nextCard(){prevId=cur?cur.id:null;cur=pick();render();}
 
-async function api(prompt,modelOverride,tvingaDelad){
-  const delad=tvingaDelad===true;
-  const p=delad?SHARED.prov:getProv(), cfg=PROV[p];
-  const key=delad?SHARED.key.trim():getKey();
+async function api(prompt,modelOverride,entry){
+  const delad=!!entry;
+  const p=delad?entry.prov:getProv(), cfg=PROV[p];
+  const key=delad?entry.key:getKey();
   const url=delad?cfg.url:getUrl();
-  const useModel=modelOverride||(delad?((SHARED.model||'').trim()||cfg.snabb):getModel());
+  const useModel=modelOverride||(delad?(entry.model||cfg.snabb||cfg.modeller[0]):getModel());
   if(!url){logAdd({prov:cfg.namn,model:useModel,url:'(ingen)',status:'—',error:'Ingen adress angiven.'});throw new Error('Ingen adress angiven. Öppna fliken AI.');}
   if(!key && p!=='custom'){logAdd({prov:cfg.namn,model:useModel,url,status:'—',error:'Ingen nyckel angiven.'});throw new Error('Ingen API-nyckel angiven. Öppna fliken AI.');}
   let headers={"content-type":"application/json"}, body;
@@ -433,12 +542,36 @@ async function api(prompt,modelOverride,tvingaDelad){
   return String(c).trim();
 }
 
+/* Går igenom de delade nycklarna i tur och ordning. Blir en nyckel avvisad
+   hoppar vi vidare till nästa, och den som svarar blir standard från och med då. */
+async function apiPool(prompt,model){
+  const ordning=poolOrdning();
+  if(!ordning.length)throw new Error('Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
+  let sist=null;
+  for(let i=0;i<ordning.length;i++){
+    const e=ordning[i];
+    try{
+      const t=await api(prompt,(model&&i===0)?model:null,e);
+      poolSattStandard(e.id);
+      return t;
+    }catch(err){
+      sist=err;
+      const st=err.status;
+      if(st===401||st===403||st===402||st===404){ poolDodMarkera(e.id,err.message,false); continue; }
+      if(st===429){ poolDodMarkera(e.id,err.message,true); continue; }
+      throw err;   // nätverk eller serverfel — det är inte nyckeln det är fel på
+    }
+  }
+  throw sist||new Error('Ingen av de delade nycklarna fungerade.');
+}
+
 let delatFallback=false;
 async function callAI(prompt,model){
+  if(getSource()==='delad')return apiPool(prompt,model);
   try{ return await api(prompt,model); }
   catch(e){
-    if(e&&e.nyckelfel&&getSource()==='egen'&&harDelad()){
-      const t=await api(prompt,null,true);
+    if(e&&e.nyckelfel&&harDelad()){
+      const t=await apiPool(prompt,null);
       delatFallback=true;
       return t;
     }
@@ -644,16 +777,102 @@ $('preset')&&($('preset').onchange=()=>{
   $('model').value=pr.snabb;
   $('model2').value=pr.stark;
 });
+/* Adressen till keys.json på GitHub. Räknas ut från webbadressen när sidan
+   ligger på GitHub Pages, annars används värdena här. */
+const REPO={agare:'Aldur13',repo:'flashcards',gren:'claude/website-launch-setup-u4g39j'};
+function repoRedigeraUrl(){
+  let agare=REPO.agare, repo=REPO.repo;
+  const h=location.hostname.toLowerCase();
+  if(h.endsWith('.github.io')){
+    agare=h.replace('.github.io','');
+    const del=location.pathname.split('/').filter(Boolean);
+    if(del.length&&!/\.html?$/i.test(del[0]))repo=del[0];
+    else repo=agare+'.github.io';
+  }
+  return 'https://github.com/'+agare+'/'+repo+'/edit/'+REPO.gren+'/'+POOLFIL;
+}
+
+function poolStatus(e){
+  const d=poolDoda()[e.id];
+  if(poolLevande(e.id))return e.id===poolStandard()?{txt:'Används nu',fa:'var(--malachite)'}:{txt:'Redo',fa:'#6A6558'};
+  if(d&&d.till&&Date.now()<d.till)return {txt:'Upptagen just nu',fa:'var(--ochre)'};
+  return {txt:'Slutade fungera '+((d&&d.tid||'').slice(0,10)),fa:'var(--clay)'};
+}
+function renderPool(){
+  const w=$('poolWrap');if(!w)return;
+  const lista=poolOrdning();
+  if(!lista.length){
+    $('poolList').innerHTML='<div class="empty">Inga delade nycklar ännu. Lägg till en nedan, eller använd en egen.</div>';
+    return;
+  }
+  $('poolList').innerHTML=lista.map(e=>{
+    const s2=poolStatus(e), fri=GRATIS.indexOf(e.prov)>=0;
+    return `<div class="reg">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <p class="rq">${esc(e.namn)}</p>
+        <span class="lvl" style="color:${s2.fa}">${esc(s2.txt)}</span>
+      </div>
+      <p class="ra">${esc(PROV[e.prov].namn)} · <span data-nyckel="${esc(e.id)}" style="font-family:ui-monospace,monospace">${esc(mask(e.key))}</span>
+        <button type="button" data-visa="${esc(e.id)}" style="background:none;border:0;padding:0 0 0 6px;color:var(--lapis);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline">visa</button></p>
+      ${fri?'':'<p class="rn">'+esc(PROV[e.prov].namn)+' kan kosta pengar. Lägg helst bara gratisnycklar i den delade listan.</p>'}
+    </div>`;
+  }).join('');
+  $('poolList').querySelectorAll('[data-visa]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.getAttribute('data-visa'), e=POOL.filter(x=>x.id===id)[0];
+      const f=$('poolList').querySelector('[data-nyckel="'+id+'"]');
+      if(!e||!f)return;
+      const dold=f.textContent.indexOf('•')>=0;
+      f.textContent=dold?e.key:mask(e.key);
+      b.textContent=dold?'dölj':'visa';
+    };
+  });
+}
+async function testaAlla(){
+  const b=$('testall');
+  b.disabled=true;b.textContent='Testar…';
+  for(const e of POOL.slice()){
+    try{
+      await api('Svara med ordet OK och inget annat.',null,e);
+      const m=poolDoda();if(m[e.id]){delete m[e.id];poolSkrivDoda(m);}
+      if(!poolStandard())poolSattStandard(e.id);
+    }catch(err){
+      const st=err.status;
+      if(st===429)poolDodMarkera(e.id,err.message,true);
+      else if(st===401||st===403||st===402||st===404)poolDodMarkera(e.id,err.message,false);
+    }
+    renderPool();
+  }
+  b.disabled=false;b.textContent='Testa alla';
+  const kvar=POOL.filter(e=>poolLevande(e.id)).length;
+  msg(kvar+' av '+POOL.length+' delade nycklar fungerar.',kvar>0);
+  $('logbox').textContent=logDump();
+}
+function npRad(){
+  const namn=$('np-namn').value.trim()||'Delad nyckel';
+  const prov=$('np-prov').value, key=$('np-key').value.trim();
+  return JSON.stringify({namn,prov,key},null,0);
+}
+function renderNy(){
+  const prov=$('np-prov').value, key=$('np-key').value.trim();
+  $('np-out').textContent=key?npRad()+',':'Fyll i nyckeln så visas raden här.';
+  const fri=GRATIS.indexOf(prov)>=0;
+  $('np-warn').style.display=fri?'none':'block';
+  if(!fri)$('np-warn').textContent=PROV[prov].namn+' kan kosta pengar, och alla som öppnar sidan kan läsa nyckeln. Lägg helst bara in en gratisnyckel utan betalkort.';
+}
 function renderSource(){
   const has=harDelad(), src=getSource(), egen=(!has||src==='egen');
   $('srcWrap').style.display=has?'block':'none';
+  $('poolWrap').style.display=(has&&src==='delad')?'block':'none';
   $('src-delad').setAttribute('aria-selected',src==='delad'?'true':'false');
   $('src-egen').setAttribute('aria-selected',src==='egen'?'true':'false');
   $('egenWrap').style.display=egen?'block':'none';
   $('savekey').style.display=egen?'':'none';
+  const a=poolAktiv();
   $('srchint').textContent=src==='delad'
-    ? 'Den delade nyckeln ('+PROV[SHARED.prov].namn+') är redan inlagd. Du behöver inte göra något — börja bara öva.'
+    ? 'Du använder de delade nycklarna'+(a?' — just nu "'+a.namn+'"':'')+'. Du behöver inte göra något, börja bara öva.'
     : 'Du använder din egen nyckel. Den sparas i den här webbläsaren och ligger kvar till nästa gång du kommer tillbaka.';
+  if(has)renderPool();
 }
 function mask(k){k=String(k);return k.length<=8?k.slice(0,2)+'••••':k.slice(0,4)+'••••••'+k.slice(-4);}
 function renderSaved(){
@@ -710,6 +929,16 @@ function setupSettings(){
   renderSaved();
   renderKeyWarn();
   $('prov').onchange=()=>{fillProv();renderSaved();};
+  $('np-prov').innerHTML=Object.keys(PROV).filter(k=>k!=='custom').map(k=>'<option value="'+k+'">'+esc(PROV[k].namn)+'</option>').join('');
+  ['np-namn','np-prov','np-key'].forEach(id=>{$(id).oninput=renderNy;$(id).onchange=renderNy;});
+  renderNy();
+  $('testall').onclick=testaAlla;
+  $('np-copy').onclick=async()=>{
+    const t=npRad()+',';
+    try{ await navigator.clipboard.writeText(t); msg('Raden är kopierad. Klistra in den i keys.json bland de andra nycklarna.',true); }
+    catch(e){ msg('Kunde inte kopiera automatiskt — markera raden ovan och kopiera den för hand.',false); }
+  };
+  $('np-open').onclick=()=>window.open(repoRedigeraUrl(),'_blank','noopener');
   $('src-delad').onclick=()=>{setSource('delad');renderSource();renderKeyWarn();};
   $('src-egen').onclick=()=>{setSource('egen');renderSource();renderSaved();renderKeyWarn();};
   $('tokey').onclick=()=>show('set');
@@ -733,12 +962,20 @@ function setupSettings(){
     if(box.style.display==='none'){box.textContent=logDump();box.style.display='block';$('showlog').textContent='Dölj logg';}
     else{box.style.display='none';$('showlog').textContent='Visa logg';}
   };
+}
+
+/* Körs när keys.json har hämtats — först då vet vi om det finns någon delad
+   nyckel, och därmed om eleven behöver ombes lägga in en egen. */
+function poolKlar(){
+  renderSource();renderKeyWarn();
+  if(harDelad())renderPool();
   if(!harDelad()&&!getKey()&&getProv()!=='custom')show('set');
 }
 $('check').onclick=check;
 $('skip').onclick=()=>{audio();nextCard();};
 $('ans').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))check();});
 load();nextCard();setupSettings();
+laddaPool().then(poolKlar);
 </script>
 
 </body>
