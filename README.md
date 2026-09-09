@@ -20,6 +20,19 @@ Områdena är Jordbruksrevolutionen, Högkulturer, Historiska begrepp, Antikens
 världar, Sumererna, Babylonien och Assyrien, Fenicierna, Judarna, Egypten och
 Faraoner.
 
+### Välj ämnen
+
+Första gången sidan öppnas får man kryssa i vilka områden övningen ska hämta
+frågor ur. Listan är numrerad och sorterad **svagast först**, så numret är
+samtidigt rekommendationen: nummer 1 är det du kan sämst, och de tre svagaste
+märks *rekommenderas*. Varje rad visar hur många frågor området har och hur
+stor del du kan. Har man inte svarat på något ännu står listan i bokstavsordning
+och ingenting rekommenderas — det finns inget att gå på då.
+
+Knapparna **Alla ämnen** och **De tre svagaste** fyller i åt en. Valet sparas i
+webbläsaren, och går att ändra när som helst genom att trycka på områdesnamnet
+ovanför frågan (*Egypten · byt*).
+
 Rättningen blir strängare ju bättre du kan en fråga (fem nivåer), och från
 nivå 2 formuleras frågan om så att man inte kan lära sig facit utantill.
 Allt du gjort sparas i din egen webbläsare — inget skickas till någon server

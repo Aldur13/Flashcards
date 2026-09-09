@@ -52,6 +52,15 @@ button.ghost{background:transparent;color:#5C5749;border:1px solid #C9C3B2}
   .dom{margin-top:14px;border-radius:10px;padding:14px 15px;font-size:15px;background:var(--lime-2);border-left:4px solid var(--lapis)}
   .dom .vt{font-family:'Fraunces',serif;font-size:16px;margin:0 0 5px}
   .dom .dm{font-size:12px;color:#6A6558;margin:8px 0 0}
+  .amne{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid #D8D2C0;cursor:pointer}
+  .amne:last-of-type{border-bottom:0}
+  .amne input{width:18px;height:18px;accent-color:var(--lapis);flex:none;margin:0;cursor:pointer}
+  .amne .nr{font-family:'Fraunces',serif;font-size:15px;color:#8A836F;min-width:18px;flex:none;text-align:right}
+  .amne .an{flex:1;font-size:15px;line-height:1.3}
+  .amne .am{display:block;font-size:12px;color:#6A6558;margin-top:3px}
+  .amne .rek{display:inline-block;margin-left:7px;font-size:11px;color:var(--lime);background:var(--malachite);border-radius:20px;padding:2px 8px;white-space:nowrap}
+  .bar{display:block;width:52px;height:7px;background:#D8D2C0;border-radius:4px;overflow:hidden;flex:none}
+  .bar span{display:block;height:100%;background:var(--malachite)}
 table{width:100%;border-collapse:collapse;font-size:14px}
 td,th{text-align:left;padding:9px 0;border-bottom:1px solid #D8D2C0;vertical-align:middle}
 th{font-weight:500;font-size:12px;color:#8A836F}
@@ -89,8 +98,10 @@ th{font-weight:500;font-size:12px;color:#8A836F}
   </div>
 
   <div id="v-ova" class="panel">
+    <div id="amnesval" style="display:none"></div>
+    <div id="ovaKort">
     <div class="meta">
-      <span class="chip" id="cat">Laddar</span>
+      <button type="button" class="chip" id="cat" style="border:0;font-family:inherit;font-size:12px;color:var(--ink);cursor:pointer">Laddar</button>
       <span class="chip" id="strict">Nivå 1</span>
       <span class="streak" id="streak">0 i rad</span>
     </div>
@@ -102,6 +113,7 @@ th{font-weight:500;font-size:12px;color:#8A836F}
       <button class="act" id="check">Rätta svaret</button>
     </div>
     <div id="res"></div>
+    </div>
   </div>
 
   <div id="v-stat" class="panel" style="display:none"></div>
@@ -543,8 +555,88 @@ function burst(n){
   }
 }
 
+/* ── ÄMNESVAL ────────────────────────────────────────────────────────────────
+   Eleven väljer vilka områden övningen ska hämta frågor ur. Listan sorteras
+   svagast först, så numret i listan är samtidigt rekommendationen: 1 är det du
+   kan sämst. Valet ligger i webbläsaren och går att ändra när som helst genom
+   att trycka på områdesnamnet ovanför frågan.                                */
+const AMNEN_KEY='flod-amnen';
+function allaAmnen(){return [...new Set(CARDS.map(c=>c.k))];}
+function sparatVal(){
+  try{const v=JSON.parse(localStorage.getItem(AMNEN_KEY)||'null');
+    return Array.isArray(v)?v.filter(k=>allaAmnen().indexOf(k)>=0):null;}catch(e){return null;}
+}
+function harValtAmnen(){const v=sparatVal();return !!(v&&v.length);}
+function valdaAmnen(){const v=sparatVal();return (v&&v.length)?v:allaAmnen();}
+function sattAmnen(v){try{localStorage.setItem(AMNEN_KEY,JSON.stringify(v));}catch(e){}}
+function amnesKunskap(k){
+  const cs=CARDS.filter(c=>c.k===k);
+  return cs.length?cs.reduce((a,c)=>a+st(c.id).lvl,0)/(cs.length*MAX):0;
+}
+/* Svagast först — det är den ordningen som är rekommendationen. */
+function amnenSvagastForst(){
+  return allaAmnen().map(k=>({k,niva:amnesKunskap(k),antal:CARDS.filter(c=>c.k===k).length}))
+    .sort((a,b)=>a.niva-b.niva||a.k.localeCompare(b.k,'sv'));
+}
+
+let valTmp=[];
+function visaAmnesval(){
+  audio();
+  valTmp=valdaAmnen().slice();
+  $('amnesval').style.display='block';
+  $('ovaKort').style.display='none';
+  ritaAmnesval();
+  show('ova');
+}
+function doljAmnesval(){
+  $('amnesval').style.display='none';
+  $('ovaKort').style.display='block';
+}
+function ritaAmnesval(){
+  const rader=amnenSvagastForst();
+  /* Utan svar bakom sig finns ingen rangordning att rekommendera — då är alla
+     områden lika okända, och listan står bara i bokstavsordning. */
+  const harData=rader.some(r=>r.niva>0);
+  const rek=harData?rader.filter(r=>r.niva<1).slice(0,3).map(r=>r.k):[];
+  let h=`<p style="margin:0 0 5px;font-family:'Fraunces',serif;font-size:21px">Vad vill du öva på?</p>
+  <p style="margin:0 0 14px;font-size:13px;color:#6A6558;line-height:1.5">${harData
+    ?'Sorterat efter hur säkert du kan varje område — det du kan sämst ligger överst, så nummer 1 är det som behövs mest. Kryssa i det du vill ha med.'
+    :'Kryssa i det du vill öva på. När du har svarat på några frågor sorteras listan om efter vad du kan sämst, och de områden som behövs mest märks som rekommenderade.'}</p>`;
+  rader.forEach((r,i)=>{
+    const vald=valTmp.indexOf(r.k)>=0;
+    h+=`<label class="amne">
+      <input type="checkbox" data-amne="${esc(r.k)}"${vald?' checked':''}>
+      <span class="nr">${i+1}</span>
+      <span class="an">${esc(r.k)}${rek.indexOf(r.k)>=0?'<span class="rek">rekommenderas</span>':''}
+        <span class="am">${r.antal} frågor · du kan ${Math.round(r.niva*100)} procent</span></span>
+      <span class="bar"><span style="width:${Math.round(r.niva*100)}%"></span></span>
+    </label>`;
+  });
+  h+=`<div class="row"><button class="act ghost" id="amAlla">Alla ämnen</button>${harData?'<button class="act ghost" id="amSvag">De tre svagaste</button>':''}</div>
+  <div id="amErr" class="err" style="display:none">Kryssa i minst ett ämne.</div>
+  <div class="row"><button class="act" id="amKlar">Börja öva</button></div>`;
+  $('amnesval').innerHTML=h;
+  $('amnesval').querySelectorAll('input[data-amne]').forEach(b=>{
+    b.onchange=()=>{
+      const k=b.getAttribute('data-amne'), i=valTmp.indexOf(k);
+      if(b.checked&&i<0)valTmp.push(k);
+      if(!b.checked&&i>=0)valTmp.splice(i,1);
+      $('amErr').style.display='none';
+    };
+  });
+  $('amAlla').onclick=()=>{audio();valTmp=allaAmnen();ritaAmnesval();};
+  if($('amSvag'))$('amSvag').onclick=()=>{audio();valTmp=amnenSvagastForst().slice(0,3).map(r=>r.k);ritaAmnesval();};
+  $('amKlar').onclick=()=>{
+    if(!valTmp.length){$('amErr').style.display='block';return;}
+    audio();sattAmnen(valTmp);doljAmnesval();nextCard();$('ans').focus();
+  };
+}
+
 function pick(){
-  const pool=CARDS.filter(c=>c.id!==prevId);
+  const valda=valdaAmnen();
+  let pool=CARDS.filter(c=>valda.indexOf(c.k)>=0&&c.id!==prevId);
+  if(!pool.length)pool=CARDS.filter(c=>valda.indexOf(c.k)>=0);
+  if(!pool.length)pool=CARDS.filter(c=>c.id!==prevId);
   const w=pool.map(c=>{const l=st(c.id).lvl;return Math.pow(MAX-l,2)+1;});
   let t=w.reduce((a,b)=>a+b,0), r=Math.random()*t;
   for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
@@ -552,7 +644,7 @@ function pick(){
 }
 
 function render(){
-  $('cat').textContent=cur.k;
+  $('cat').innerHTML=esc(cur.k)+' <span style="color:#8A836F">· byt</span>';
   $('strict').textContent=STRICT[st(cur.id).lvl].namn;
   $('q').textContent=phrasing[cur.id]||cur.q;
   $('streak').textContent=streak+' i rad';
@@ -1173,8 +1265,11 @@ function poolKlar(){
 }
 $('check').onclick=check;
 $('skip').onclick=()=>{audio();nextCard();};
+$('cat').onclick=visaAmnesval;
 $('ans').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))check();});
 load();nextCard();setupSettings();
+/* Första besöket: låt eleven välja områden innan första frågan. */
+if(!harValtAmnen())visaAmnesval();
 laddaPool().then(poolKlar);
 </script>
 
