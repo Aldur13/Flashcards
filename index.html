@@ -1,24 +1,1286 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Alien Siege</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        background: #040810;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        overflow: hidden;
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flodkulturerna — plugga med AI</title>
+<meta name="description" content="Läxförhör om de första flodkulturerna. Skriv svaren med egna ord, en AI rättar och håller reda på vad du kan.">
+<meta name="theme-color" content="#1B2A5B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B2A5B'/%3E%3Cpath d='M16 5 L27 27 H5 Z' fill='%23C08423'/%3E%3Cpath d='M5 27 h22' stroke='%23EFEBDF' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Archivo:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lapis:#1B2A5B; --lapis-2:#26397A; --lime:#EFEBDF; --lime-2:#E2DCCB;
+  --ochre:#C08423; --malachite:#2E7D6E; --clay:#A6462C; --ink:#171A24;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--lapis);color:var(--lime);font-family:'Archivo',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+.shell{max-width:560px;margin:0 auto;padding:20px 18px 56px}
+h1{font-family:'Fraunces',serif;font-weight:500;font-size:26px;line-height:1.15;margin:0;letter-spacing:-0.01em}
+.sub{font-size:13px;color:#9FA9CB;margin:4px 0 0}
+.tabs{display:flex;gap:0;margin:20px 0 18px;border:1px solid #3A4A82;border-radius:10px;overflow:hidden}
+.tab{flex:1;padding:9px 2px;font-size:13px;background:transparent;border:0;border-right:1px solid #3A4A82;color:#9FA9CB;font-family:inherit;font-size:14px;cursor:pointer}
+.tab:last-child{border-right:0}
+.tab[aria-selected="true"]{background:var(--lime);color:var(--ink)}
+.panel{background:var(--lime);color:var(--ink);border-radius:14px;padding:22px 20px}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#6A6558;margin-bottom:14px}
+.chip{background:var(--lime-2);padding:3px 10px;border-radius:20px}
+.q{font-family:'Fraunces',serif;font-size:21px;line-height:1.35;margin:0 0 18px;color:var(--ink)}
+textarea{width:100%;min-height:104px;padding:12px 13px;font-family:inherit;font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid #C9C3B2;border-radius:10px;resize:vertical}
+.lbl{display:block;font-size:12px;color:#8A836F;margin:14px 0 5px}
+input[type=password],input[type=text],select{width:100%;padding:11px 13px;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid #C9C3B2;border-radius:10px}
+input[type=password]:focus,input[type=text]:focus,select:focus{outline:2px solid var(--lapis-2);outline-offset:1px;border-color:transparent}
+textarea:focus{outline:2px solid var(--lapis-2);outline-offset:1px;border-color:transparent}
+.row{display:flex;gap:10px;margin-top:12px}
+button.act{flex:1;padding:13px;border-radius:10px;border:0;background:var(--lapis);color:var(--lime);font-family:inherit;font-size:15px;cursor:pointer}
+button.act:disabled{opacity:.45;cursor:default}
+button.ghost{background:transparent;color:#5C5749;border:1px solid #C9C3B2}
+.err{color:var(--clay);font-size:13px;margin-top:8px}
+.verdict{margin-top:16px;border-radius:10px;padding:14px 15px;font-size:15px}
+.v-ratt{background:#DCEAE2;border-left:4px solid var(--malachite)}
+.v-nastan{background:#F3E6CD;border-left:4px solid var(--ochre)}
+.v-fel{background:#F0DDD6;border-left:4px solid var(--clay)}
+.vt{font-family:'Fraunces',serif;font-size:17px;margin:0 0 5px}
+.facit{margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.12);font-size:14px;color:#4A4638}
+.facit b{font-weight:500;display:block;font-size:12px;color:#8A836F;margin-bottom:3px}
+  .appeal{margin-top:14px;background:var(--lime-2);border-radius:10px;padding:14px}
+  .appeal .ovt{font-family:'Fraunces',serif;font-size:16px;margin:0 0 4px}
+  .appeal .ovh{font-size:12px;color:#6A6558;margin:0 0 10px;line-height:1.45}
+  .appeal textarea{min-height:78px;font-size:15px}
+  .dom{margin-top:14px;border-radius:10px;padding:14px 15px;font-size:15px;background:var(--lime-2);border-left:4px solid var(--lapis)}
+  .dom .vt{font-family:'Fraunces',serif;font-size:16px;margin:0 0 5px}
+  .dom .dm{font-size:12px;color:#6A6558;margin:8px 0 0}
+  .amne{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid #D8D2C0;cursor:pointer}
+  .amne:last-of-type{border-bottom:0}
+  .amne input{width:18px;height:18px;accent-color:var(--lapis);flex:none;margin:0;cursor:pointer}
+  .amne .nr{font-family:'Fraunces',serif;font-size:15px;color:#8A836F;min-width:18px;flex:none;text-align:right}
+  .amne .an{flex:1;font-size:15px;line-height:1.3}
+  .amne .am{display:block;font-size:12px;color:#6A6558;margin-top:3px}
+  .amne .rek{display:inline-block;margin-left:7px;font-size:11px;color:var(--lime);background:var(--malachite);border-radius:20px;padding:2px 8px;white-space:nowrap}
+  .bar{display:block;width:52px;height:7px;background:#D8D2C0;border-radius:4px;overflow:hidden;flex:none}
+  .bar span{display:block;height:100%;background:var(--malachite)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{text-align:left;padding:9px 0;border-bottom:1px solid #D8D2C0;vertical-align:middle}
+th{font-weight:500;font-size:12px;color:#8A836F}
+.track{height:7px;background:var(--lime-2);border-radius:4px;overflow:hidden;min-width:70px}
+.fill{height:100%;background:var(--malachite)}
+.lvl{font-size:12px;color:#6A6558;white-space:nowrap}
+.reg{padding:13px 0;border-bottom:1px solid #D8D2C0}
+.reg p{margin:0}
+.reg .rq{font-family:'Fraunces',serif;font-size:15px;color:var(--ink)}
+.reg .ra{font-size:13px;color:#5C5749;margin-top:4px}
+.reg .rn{font-size:12px;color:var(--clay);margin-top:5px}
+.empty{text-align:center;color:#8A836F;font-size:14px;padding:26px 10px}
+.pop{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:9}
+.streak{font-family:'Fraunces',serif;font-size:14px}
+@media (prefers-reduced-motion:reduce){.pop{display:none}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <h1>De första flodkulturerna</h1>
+  <p class="sub">Skriv svaret med egna ord. En AI rättar och håller reda på vad du kan.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="t-ova" role="tab" aria-selected="true">Öva</button>
+    <button class="tab" id="t-stat" role="tab" aria-selected="false">Statistik</button>
+    <button class="tab" id="t-reg" role="tab" aria-selected="false">Register</button>
+    <button class="tab" id="t-set" role="tab" aria-selected="false">AI</button>
+  </div>
+
+  <div id="keywarn" style="display:none;background:#F0DDD6;border-left:4px solid var(--clay);border-radius:10px;padding:14px 15px;margin-bottom:14px;color:var(--ink)">
+    <p style="margin:0 0 6px;font-family:'Fraunces',serif;font-size:17px">Nyckeln fungerar inte</p>
+    <p id="keywarntext" style="margin:0 0 10px;font-size:14px;line-height:1.5"></p>
+    <button class="act" id="tokey" style="width:100%">Öppna fliken AI</button>
+  </div>
+
+  <div id="v-ova" class="panel">
+    <div id="amnesval" style="display:none"></div>
+    <div id="ovaKort">
+    <div class="meta">
+      <button type="button" class="chip" id="cat" style="border:0;font-family:inherit;font-size:12px;color:var(--ink);cursor:pointer">Laddar</button>
+      <span class="chip" id="strict">Nivå 1</span>
+      <span class="streak" id="streak">0 i rad</span>
+    </div>
+    <p class="q" id="q">Förbereder frågorna…</p>
+    <textarea id="ans" placeholder="Skriv ditt svar här" aria-label="Ditt svar"></textarea>
+    <div id="err" class="err" style="display:none"></div>
+    <div class="row">
+      <button class="act ghost" id="skip">Hoppa över</button>
+      <button class="act" id="check">Rätta svaret</button>
+    </div>
+    <div id="res"></div>
+    </div>
+  </div>
+
+  <div id="v-stat" class="panel" style="display:none"></div>
+  <div id="v-reg" class="panel" style="display:none"></div>
+
+  <div id="v-set" class="panel" style="display:none">
+    <p style="margin:0 0 6px;font-family:'Fraunces',serif;font-size:19px">AI-tjänst och nyckel</p>
+    <p style="margin:0 0 14px;font-size:13px;color:#6A6558">Nyckeln sparas bara i den här webbläsaren och skickas bara till den tjänst du valt. Den ligger kvar nästa gång du kommer tillbaka. Varje tjänst har sin egen nyckel, så du kan byta fram och tillbaka.</p>
+
+    <div id="srcWrap" style="display:none">
+      <label class="lbl">Vilken nyckel ska användas?</label>
+      <div class="tabs" style="margin:6px 0 8px">
+        <button class="tab" id="src-delad" type="button" aria-selected="false">Delad nyckel</button>
+        <button class="tab" id="src-egen" type="button" aria-selected="false">Egen nyckel</button>
+      </div>
+      <p id="srchint" style="margin:0 0 16px;font-size:12px;color:#6A6558"></p>
+    </div>
+
+    <div id="poolWrap" style="display:none;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 4px">
+        <p style="margin:0;font-family:'Fraunces',serif;font-size:17px">Delade nycklar</p>
+        <button class="act ghost" type="button" id="testall" style="flex:0 0 auto;padding:7px 12px;font-size:13px">Testa alla</button>
+      </div>
+      <p style="margin:0 0 10px;font-size:12px;color:#6A6558">Alla som öppnar sidan ser samma lista. Den översta som fungerar används — slutar den fungera hoppar sidan vidare till nästa av sig själv.</p>
+      <div id="poolList"></div>
+
+      <details id="addWrap" style="margin-top:14px">
+        <summary style="cursor:pointer;font-size:14px;color:var(--lapis)">Lägg till en nyckel som alla får</summary>
+        <p style="margin:10px 0 0;font-size:13px;color:#6A6558">De delade nycklarna ligger i filen <b>keys.json</b>. Fyll i fälten, kopiera raden och klistra in den i filen på GitHub. Nästa gång någon laddar sidan finns nyckeln där.</p>
+        <label class="lbl" for="np-namn">Namn på nyckeln</label>
+        <input id="np-namn" type="text" autocomplete="off" placeholder="T.ex. Ellens Groq-nyckel">
+        <label class="lbl" for="np-prov">Tjänst</label>
+        <select id="np-prov" aria-label="Tjänst för den delade nyckeln"></select>
+        <label class="lbl" for="np-key">Nyckel</label>
+        <input id="np-key" type="text" autocomplete="off" placeholder="Klistra in nyckeln">
+        <p id="np-warn" class="err" style="display:none"></p>
+        <label class="lbl">Raden att klistra in</label>
+        <pre id="np-out" style="white-space:pre-wrap;word-break:break-all;font-size:12px;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin:0"></pre>
+        <div class="row">
+          <button class="act ghost" type="button" id="np-copy">Kopiera rad</button>
+          <button class="act" type="button" id="np-open">Öppna keys.json</button>
+        </div>
+      </details>
+    </div>
+
+    <div id="egenWrap">
+    <label class="lbl" for="prov">Tjänst</label>
+    <select id="prov" aria-label="AI-tjänst">
+      <option value="groq">Groq — gratis</option>
+      <option value="gemini">Google Gemini — gratis</option>
+      <option value="kimi">Kimi (Moonshot AI)</option>
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI</option>
+      <option value="mistral">Mistral</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="hf">Hugging Face</option>
+      <option value="custom">Egen adress (Ollama, LM Studio, annat)</option>
+    </select>
+
+    <div id="baseWrap" style="display:none">
+      <label class="lbl" for="base">Adress till API:et</label>
+      <input id="base" type="text" placeholder="http://localhost:11434/v1/chat/completions" autocomplete="off">
+    </div>
+
+    <label class="lbl" for="key">API-nyckel</label>
+    <input id="key" type="password" placeholder="Klistra in nyckeln" autocomplete="off">
+
+    <div id="presetWrap" style="display:none">
+      <label class="lbl" for="preset">Snabbval för eskalering</label>
+      <select id="preset"></select>
+    </div>
+
+    <label class="lbl" for="model">Snabb modell</label>
+    <input id="model" type="text" list="models" autocomplete="off" placeholder="Modellnamn">
+    <datalist id="models"></datalist>
+    <p id="provhint" style="margin:8px 0 0;font-size:12px;color:#6A6558"></p>
+
+    <label class="lbl" for="model2">Eskaleringsmodell (valfritt)</label>
+    <input id="model2" type="text" list="models" autocomplete="off" placeholder="Lämna tomt för ingen eskalering">
+    <p style="margin:8px 0 0;font-size:12px;color:#6A6558">Rättar den snabba modellen osäkert eller landar på "nästan", frågas den här modellen istället.</p>
+    </div>
+
+    <div class="row"><button class="act ghost" id="testkey">Testa</button><button class="act" id="savekey">Spara</button></div>
+    <p id="setmsg" style="margin:12px 0 0;font-size:13px;display:none"></p>
+    <div id="savedWrap" style="display:none;margin-top:22px;padding-top:16px;border-top:1px solid #D8D2C0">
+      <p style="margin:0 0 4px;font-family:'Fraunces',serif;font-size:17px">Sparade nycklar</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#6A6558">Sparas i den här webbläsaren och finns kvar nästa gång du öppnar sidan.</p>
+      <div id="savedList"></div>
+    </div>
+
+    <button class="act ghost" id="showlog" style="width:100%;margin-top:16px;">Visa logg</button>
+    <pre id="logbox" style="display:none;white-space:pre-wrap;font-size:11px;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin-top:8px;max-height:260px;overflow:auto;"></pre>
+  </div>
+</div>
+
+<script>
+const CARDS=[
+{id:1,k:"Jordbruksrevolutionen",q:"Vad levde människan av fram till för 10 000–12 000 år sedan?",a:"Hon var jägare och samlare. De följde jaktdjuren, var nomader och kunde bara försörja ett fåtal människor."},
+{id:2,k:"Jordbruksrevolutionen",q:"Var började jordbruket och vad innebar det?",a:"I Anatolien, dagens Turkiet. Fler människor kunde försörjas på mindre yta och det blev ett överskott på mat och tamboskap."},
+{id:3,k:"Jordbruksrevolutionen",q:"Vilka blev konsekvenserna av jordbruksrevolutionen?",a:"Befolkningsökning. Bofasta byar som utvecklades till städer. Specialisering av yrken, till exempel hantverkare. Teknikutveckling som brons. Handel utvecklas, varor byts mellan olika områden."},
+{id:4,k:"Jordbruksrevolutionen",q:"Vad är brons och varför var det viktigt?",a:"Brons är tenn och koppar. Det gav bättre redskap och vapen."},
+{id:5,k:"Högkulturer",q:"Vad kännetecknar de första högkulturerna, för cirka 5000 år sedan?",a:"Utvecklad handel och hantverk. Centralmakt som styr ett område, till exempel en kung. Skrivtecken. Oftast en gemensam religion."},
+{id:6,k:"Högkulturer",q:"Vid vilka floder uppstod de första högkulturerna?",a:"Fem floder: Eufrat och Tigris (dagens Irak), Nilen, Indus samt Huang He, som också kallas Gula floden."},
+{id:7,k:"Högkulturer",q:"Varför uppstod högkulturerna just vid floder?",a:"Transport, bevattning, försvar och föda."},
+{id:8,k:"Högkulturer",q:"Vad var den bördiga halvmånen?",a:"Ett bördigt område från Egypten till Eufrat och Tigris. Det var ofta ett mål för antikens erövrare. Idag är det betydligt torrare."},
+{id:9,k:"Sumererna",q:"Vad betyder Mesopotamien och var ligger det?",a:"Tvåflodslandet. Det ligger i dagens Irak."},
+{id:10,k:"Sumererna",q:"När levde sumererna?",a:"Cirka 4000 till 2000 f.Kr."},
+{id:11,k:"Sumererna",q:"Varför blev prästerna så mäktiga hos sumererna?",a:"Eufrat och Tigris var nyckfulla floder med plötsliga översvämningar. Prästerna var de enda som kunde förstå och tala med gudarna."},
+{id:12,k:"Sumererna",oppen:1,q:"Vad är en stadsstat? Ge exempel.",a:"Städer som var egna stater, till exempel Ur och Uruk. De låg ofta i konflikt med varandra."},
+{id:13,k:"Sumererna",q:"Vad är en zikkurat?",a:"En stor trappstegspyramid."},
+{id:14,k:"Sumererna",q:"Vad var sumererna först med att utveckla?",a:"Skriften (kilskrift), konstbevattningen och hjulet, både som drejskiva och till transportvagnar."},
+{id:15,k:"Sumererna",q:"Varför försvann sumererna ur historien?",a:"Genom fientliga erövringar, och genom att den bördiga jorden fick ökad salthalt av konstbevattningen. Deras kunskaper levde vidare hos andra folk."},
+{id:16,k:"Babylonien och Assyrien",q:"När var babylonierna mäktiga?",a:"Under två perioder: cirka 1700 till 1500 f.Kr., och det nybabyloniska riket cirka 600 till 500 f.Kr."},
+{id:17,k:"Babylonien och Assyrien",q:"Vad är Hammurabis lagar kända för?",a:"De kom 1700 f.Kr. och var de första nedskrivna lagarna. De byggde på vedergällningsprincipen, tand för tand."},
+{id:18,k:"Babylonien och Assyrien",q:"Vad är hettiterna kända för?",a:"Omkring 1200 f.Kr. införde de järnhantering, som var high-tech för vapen och redskap."},
+{id:19,k:"Babylonien och Assyrien",q:"Vad är assyrierna kända för, och när?",a:"Cirka 1100 till 600 f.Kr. De var den mest fruktade och effektivaste krigsmakten. De erövrade hela bördiga halvmånen och härskade genom terror och grymhet."},
+{id:20,k:"Babylonien och Assyrien",q:"Vad hände med assyrierna till slut?",a:"Alla de besegrade folken gjorde uppror. Assyrierna besegrades och försvann ur historien."},
+{id:21,k:"Babylonien och Assyrien",q:"Vilket viktigt arv lämnade en av de assyriska kungarna?",a:"Han byggde upp ett bibliotek av lertavlor. De har bevarats och gett dagens vetenskapsmän mycket kunskap om folken vid Mesopotamien."},
+{id:22,k:"Babylonien och Assyrien",q:"Vad kännetecknade det nybabyloniska riket?",a:"Cirka 600 f.Kr. blev det ledande stormakt efter assyrierna. Babylon blev världshuvudstad. Babelstornet och den babyloniska fångenskapen nämns i bibeln. Riket besegrades av perserna."},
+{id:23,k:"Babylonien och Assyrien",q:"Vad är arvet efter babylonierna?",a:"Astrologi, astronomi, matematik med de fyra räknesätten, sju dagar i veckan, 360 dagar på ett år och gradskivans 360 grader, samt talsystemet med basen 60."},
+{id:24,k:"Babylonien och Assyrien",q:"Vad är skillnaden mellan astrologi och astronomi?",a:"Astrologi är läran om att stjärnors och planeters placering bestämmer människans öde. Astronomi är läran om himlakropparna."},
+{id:25,k:"Babylonien och Assyrien",q:"Varför har vi sju dagar i veckan och 60 sekunder på en minut?",a:"Sju dagar kommer från fem planeter plus solen och månen. 60 var basen i babyloniernas talsystem, medan vi har basen 10. Därifrån kommer 60 sekunder på en minut och 60 minuter på en timme."},
+{id:26,k:"Egypten",q:"När var Egyptens storhetstid?",a:"Cirka 3000 till 1000 f.Kr."},
+{id:27,k:"Egypten",q:"På vilka sätt var Nilen viktig för egyptierna?",a:"Regelbundna långsamma översvämningar med näringsrikt slam gav mycket bördig åkerjord och stora skördar. Nilen var en transportled, och öknen skyddade den mot fiender."},
+{id:28,k:"Egypten",q:"Varför byggdes kanaler, bassänger och dammar?",a:"För att kunna få flera skördar om året."},
+{id:29,k:"Egypten",q:"Varför blev prästerna så mäktiga i Egypten?",a:"Bevattningen krävde organisation, och det var prästerna som organiserade arbetet. Stora tempel byggdes."},
+{id:30,k:"Egypten",q:"Vad är hieroglyfer och vad skrevs de på?",a:"Egyptiernas skrivtecken, en bildskrift. De skrevs på papyrus."},
+{id:31,k:"Egypten",q:"Vad var farao?",a:"Kungen. Han var son till solguden Ra och en levande gud för egyptierna."},
+{id:32,k:"Egypten",q:"Vad var pyramiderna, och när och var byggdes de?",a:"Gravar för farao. De byggdes under Gamla riket, cirka 2700 till 2100 f.Kr., vid Gizeh."},
+{id:33,k:"Egypten",q:"Vilka byggde pyramiderna, och när på året?",a:"Bönder, inte slavar. De byggde under den tid då Nilen var översvämmad."},
+{id:34,k:"Egypten",q:"Vilka kunskaper krävdes för att bygga pyramider?",a:"Matematik, geometri och ingenjörskonst."},
+{id:35,k:"Egypten",q:"Vart flyttades faraonernas gravar senare?",a:"Till Konungarnas dal."},
+{id:36,k:"Egypten",q:"Vad trodde egyptierna om livet efter döden?",a:"De hade hundratals gudar. Skötte man sig i livet kunde man komma till ett evigt land där allt var bättre. Därför balsamerades kroppen till en mumie, så att själen kunde färdas med mumien till det eviga landet."},
+{id:37,k:"Faraoner",q:"Vad är Akhenaton känd för?",a:"Cirka 1300 f.Kr. tog han bort den gamla religionen med hundratals gudar och införde dyrkan av en enda gud, monoteism."},
+{id:38,k:"Faraoner",q:"Vem var Nefertiti?",a:"Akhenatons hustru, kallad historiens vackraste kvinna."},
+{id:39,k:"Faraoner",q:"Vad är Ramses II känd för?",a:"Cirka 1200 f.Kr. Han var det forntida Egyptens största erövrare och gjorde Egypten till en stormakt. Han lät bygga många skrytbyggen över sig själv. Bibelns Moses lär ha levt under hans regeringstid."},
+{id:40,k:"Faraoner",q:"Vad är Tutankhamon känd för?",a:"Cirka 1300 f.Kr. Han dog vid endast 18 års ålder och var betydelselös för historien. Han är känd för att hans grav var den enda icke plundrade i Konungarnas dal. Howard Carter fann den orörd 1922."},
+{id:41,k:"Egypten",q:"Varför är Rosettastenen en viktig upptäckt?",a:"Kunskapen om att läsa och tyda hieroglyfer hade försvunnit sedan länge. 1799 hittade franska soldater stenen under ett krig i Egypten. På stenen fanns samma text på tre olika språk, varav ett var gammalgrekiska. Det låg till grund för tolkningen av hieroglyferna."},
+{id:42,k:"Egypten",oppen:1,q:"Nämn två berömda egyptiska byggnader.",a:"Cheopspyramiden, som är den högsta, och Karnak, tempelstaden."},
+{id:43,k:"Historiska begrepp",q:"Vad menas med ett folk?",a:"En stor grupp människor som upplever att de har något gemensamt: att de bor på samma ställe, talar samma språk, har samma religion eller historia, eller lever på ett likartat sätt."},
+{id:44,k:"Historiska begrepp",q:"Vad betyder ordet kultur?",a:"Ordet betyder egentligen odling, från att människan lärde sig odla jorden. Men begreppet betyder också människors sätt att leva."},
+{id:45,k:"Historiska begrepp",q:"Vad är ett nomadsamhälle?",a:"Ett samhälle där människorna aldrig är bofasta utan flyttar mellan olika platser. Nomader är antingen jägare eller boskapsskötare. Idag är det ovanligt, men i forntiden levde nästan alla människor som nomader."},
+{id:46,k:"Historiska begrepp",oppen:1,q:"Vad består en stadsstat av, och finns det några idag?",a:"En stad och landsbygden runt omkring, med egna ledare och lagar. De grekiska stadsstaterna är exempel. San Marino och Singapore är två nutida exempel."},
+{id:47,k:"Historiska begrepp",q:"Vad menas med land, rike eller stat?",a:"Ett stort område där människor lever under ungefär samma lagar. De flesta stater i dagens värld är sådana."},
+{id:48,k:"Historiska begrepp",oppen:1,q:"Vad är ett imperium? Ge exempel.",a:"Ett jättelikt landområde som ofta erövrats genom krig. Assyrien, perserriket och romarriket är exempel. Ordet imperialism uppstod på 1800-talet."},
+{id:49,k:"Historiska begrepp",oppen:1,q:"Vad menas med civilisation eller högkultur?",a:"Ett samhälle med avancerade kunskaper, till exempel skriftspråk, matematik eller förmågan att bygga stora hus. Ofta finns också olika yrken och makten samlad i en huvudstad. Egypten är en av världens allra första högkulturer."},
+{id:50,k:"Historiska begrepp",q:"Vilken tidsperiod menas med antiken, och vad betyder ordet?",a:"Ungefär 500 f.Kr. till 500 e.Kr. Antik betyder gammal eller gammaldags, och som tidsbegrepp menas den äldsta grekiska och romerska historien."},
+{id:51,k:"Historiska begrepp",q:"Vilka tidsbegrepp delas historien in i efter forntiden?",a:"Antiken, medeltiden, renässansen, tidigmodern tid (nya tiden) och modern tid."},
+{id:52,k:"Historiska begrepp",q:"Varför fick medeltiden sitt namn, och vem lanserade begreppet renässansen?",a:"Historiker på 1700- och 1800-talen såg antiken som ljus och god, och medeltiden som en mörk mellantid mellan antiken och renässansen. Den schweiziske kulturhistorikern Jacob Burckhardt lanserade begreppet renässansen på 1800-talet."},
+{id:53,k:"Historiska begrepp",q:"Varför menar många historiker idag att bilden av medeltiden som mörk inte stämmer?",a:"Under medeltiden gjordes stora framsteg, till exempel i jordbruksekonomin, och dagens europeiska städer och stater grundades då. Antiken var samtidigt full av slaveri och krig. Bilden beror ofta på ur vems perspektiv verkligheten ses."},
+{id:54,k:"Historiska begrepp",q:"Vad var pax romana?",a:"Den romerska fredens tid, perioden efter den romerske kejsaren Augustus."},
+{id:55,k:"Antikens världar",q:"Vad menar forskare idag om var antikens kultur kom ifrån?",a:"Att kulturer utvecklas genom kulturmöten med andra folk, snarare än genom kulturarv. Greker och romare startade alltså inte kulturen i Europa, utan den växte fram genom möten med många andra folk runt Medelhavet."},
+{id:56,k:"Antikens världar",q:"Varför reste människor runt Medelhavet under antiken?",a:"För att köpa och sälja varor, för att hitta bättre platser att bo på, och ibland i krigståg. Kontakterna spred idéer och gjorde att nya städer och riken uppstod."},
+{id:57,k:"Antikens världar",q:"Varför uppstod de första städerna och rikena just runt Medelhavet?",a:"Jordarna var bördiga och lätta att odla, och där uppstod världens allra första jordbruk. De stora skördarna gjorde människorna rikare, så att alla inte behövde skaffa fram mat. Några kunde specialisera sig på handel och hantverk istället."},
+{id:58,k:"Egypten",q:"Vad ledde jordbrukets överskott till i Egypten?",a:"Nya yrken uppstod: präster, skrivare, hantverkare, köpmän, militärer och arkitekter. Överskottet räckte också till en omfattande handel med andra folk runt Medelhavet."},
+{id:59,k:"Egypten",q:"Varför var kalendern så viktig i Egypten?",a:"Man måste veta i förväg när nästa översvämning skulle komma, för att hinna gräva nya kanaler och laga de gamla i tid. Prästerna skötte kalendern. När stjärnan Sirius blev synlig på natthimlen var det dags, och ett par veckor senare började floden stiga."},
+{id:60,k:"Egypten",q:"Vad var Livets hus?",a:"De egyptiska templens kunskaper, som var en del av deras makt. Templen hade också som viktig funktion att förvara överskottet från goda skördeår, så att befolkningen inte skulle svälta vid en dålig skörd."},
+{id:61,k:"Egypten",q:"Hur mäktiga var de egyptiska templen?",a:"Över 80 000 bönder arbetade på mark som tillhörde templen. Templet i Thebe ägde över 400 000 djur och egna båtar, och hade egna skrivare som höll reda på vad bönderna var skyldiga att lämna av sina skördar."},
+{id:62,k:"Egypten",q:"Vad är papyrus?",a:"Ett slags papper som tillverkades av en gräsväxt som växer i Nildalen. Det var det egyptierna skrev på."},
+{id:63,k:"Egypten",q:"Vilka tre storhetsperioder brukar egyptologer tala om?",a:"Gamla riket, cirka 2700–2270 f.Kr. Mellersta riket, cirka 2040–1675 f.Kr. Nya riket, cirka 1575–1087 f.Kr."},
+{id:64,k:"Egypten",q:"Vad kännetecknar Gamla, Mellersta och Nya riket?",a:"Gamla riket: pyramiderna, i norra Egypten. Mellersta riket: Thebe som ny huvudstad, i mellersta Egypten. Nya riket: Abu Simbel-templet, i södra Egypten."},
+{id:65,k:"Egypten",q:"Vad är en egyptolog?",a:"En expert på Egyptens äldre historia."},
+{id:66,k:"Egypten",q:"Vad hände med Egypten efter Nya rikets slut?",a:"Egypten kom i tätare kontakt med de andra kulturerna runt Medelhavet, blev erövrat av andra stormakter och kontrollerades till slut av de romerska kejsarna."},
+{id:67,k:"Egypten",q:"När kunde man börja läsa hieroglyfer igen, och varför då?",a:"Kunskapen glömdes bort under antiken. Först på 1800-talet lyckades språkforskare tyda hieroglyferna, i samband med det ökande intresset för antiken. Arkeologiska utgrävningar på 1900-talet har också gett ny kunskap."},
+{id:68,k:"Egypten",q:"Vilka byggde de största pyramiderna, och hur såg de troligen på arbetet?",a:"Troligen frivilliga byggnadsarbetare, inte slavar. Många forskare menar att de flesta antagligen uppfattade det slitsamma arbetet som ett slags helig, religiös handling. Man räknar med att över 200 000 egyptier deltog i arbetet."},
+{id:69,k:"Sumererna",q:"Varifrån kom sumererna och var bosatte de sig?",a:"Det sumeriska folket invandrade för omkring 6000 år sedan till det träskiga och fuktiga området där Eufrat och Tigris flyter ut i Persiska viken."},
+{id:70,k:"Sumererna",q:"Hur kunde världens första städer uppstå i Sumer?",a:"Sumererna lyckades odla upp området med hjälp av nya former av sädesslag som gav stora skördar. Fler människor kunde födas av maten, och så småningom uppstod världens första städer."},
+{id:71,k:"Sumererna",q:"Varför började prästerna i Mesopotamien använda skrift?",a:"Ingen ägde sin egen jord, utan alla hyrde jorden av templen. För att hålla reda på vad var och en skulle betala i hyra började prästerna föra räkenskaper."},
+{id:72,k:"Sumererna",q:"Vad är kilskrift och vad skrevs den på?",a:"Skrivtecken som trycktes in i tavlor av lera, som sedan torkades. Istället för papyrus, som man använde i Egypten."},
+{id:73,k:"Babylonien och Assyrien",q:"Vad hände omkring 2000 f.Kr. i Mesopotamien?",a:"De sumeriska städerna anfölls av ett annat folk, det babyloniska. Babylonierna tog över de sumeriska städerna men byggde också en ny huvudstad, Babylon."},
+{id:74,k:"Babylonien och Assyrien",q:"Hur var Hammurabis lagar samlade och bevarade?",a:"En samling av 282 lagar, nedtecknade på en stor sten som förvarades i kungapalatset."},
+{id:75,k:"Babylonien och Assyrien",q:"Vad var tanken bakom Hammurabis lagar?",a:"Straffet skulle bli lika stort som den skada brottslingen orsakat, varken mer eller mindre. Hade man slagit ut en tand fick man en egen tand utslagen. Vissa lagar gick så långt att barnen kunde drabbas för något deras föräldrar gjort."},
+{id:76,k:"Babylonien och Assyrien",q:"Vad säger Hammurabis lagar paragraf 229 och 230?",a:"Paragraf 229: om en byggmästare inte bygger huset ordentligt och huset rasar ihop och dödar husägaren, ska byggmästaren dödas. Paragraf 230: om det rasade huset dödar husägarens son, ska byggmästarens son dödas."},
+{id:77,k:"Babylonien och Assyrien",q:"Hur delade babylonierna in dygnet och cirkeln, och varför?",a:"Talet 12 var heligt för att det är delbart med mycket. Dagen fick 12 timmar och natten 12 timmar, timmen 60 minuter, och cirkeln 360 grader. Vi använder det fortfarande."},
+{id:78,k:"Babylonien och Assyrien",q:"Varför räknas talet 13 som ett olyckstal?",a:"Det kommer från babylonierna. I deras lagtabeller ströks talet 13. Ett exempel är Hammurabis lagtavla, där skrivaren gick direkt från lag nummer 12 till lag nummer 14."},
+{id:79,k:"Babylonien och Assyrien",q:"Vad är Ishtarporten?",a:"En av Babylons stora portar, täckt av bågformade och blåglaserade tegel. Djuren på porten symboliserade olika egenskaper hos Ishtar, kärlekens och krigets gudinna. Idag finns en rekonstruktion på ett museum i Berlin."},
+{id:80,k:"Babylonien och Assyrien",q:"Hur stor var staden Babylon?",a:"En av antikens allra största städer, med flera hundra tusen invånare."},
+{id:81,k:"Babylonien och Assyrien",q:"Från vilken stad kom assyriernas kungar, och när erövrade de Babylonien?",a:"Från staden Assur, längre norrut i Mesopotamien. Deras kungar erövrade område efter område under 1300-talet f.Kr. och krossade babyloniernas rike."},
+{id:82,k:"Babylonien och Assyrien",q:"Vilket nytt vapen gav assyrierna framgång i krig?",a:"Hästdragna stridsvagnar med två soldater: den ene körde vagnen och den andre var spjutkastare."},
+{id:83,k:"Babylonien och Assyrien",q:"Vad erövrade assyrierna utanför Mesopotamien?",a:"De krossade det judiska Nordriket och härskade en tid även över Egypten. Efter det hade de skapat ett av världens första imperier."},
+{id:84,k:"Babylonien och Assyrien",q:"Vad gjorde nybabylonierna med Jerusalem?",a:"De lät riva templet i Jerusalem och förde de ledande judarna i staden i fångenskap till Babylon."},
+{id:85,k:"Fenicierna",q:"Vilka var fenicierna och var bodde de?",a:"Ett folkslag som byggde städer runt hela Medelhavet, framför allt på den östra kusten i dagens Libanon. De var kända för sitt skeppsbyggeri, sin handel och sin sjöfart."},
+{id:86,k:"Fenicierna",q:"Vilken stad grundade fenicierna i Nordafrika?",a:"Karthago, den största feniciska stadsstaten."},
+{id:87,k:"Fenicierna",q:"Vad var feniciernas språk släkt med?",a:"Det var ett semitiskt språk, släkt med dagens hebreiska och arabiska."},
+{id:88,k:"Fenicierna",q:"Varifrån kommer orden bibel och bibliotek?",a:"Från den feniciska staden Byblos, där man bytte papyrus från Egypten mot cederträ från de libanesiska skogarna. Feniciska köpmän sålde papyrusen vidare, och i Grekland började man kalla papyrus för byblos. Därav orden bibel och bibliotek."},
+{id:89,k:"Fenicierna",q:"Vad är feniciernas viktigaste kulturarv?",a:"Alfabetet. Vårt nuvarande alfabet bygger på det feniciska, som grekerna lärde sig av fenicierna. Det var i Egypten fenicierna själva lärde sig konsten att använda skrivtecken."},
+{id:90,k:"Fenicierna",q:"Vad heter staden Byblos idag?",a:"Jubayl, som fortfarande är en livlig hamnstad i Libanon."},
+{id:91,k:"Judarna",q:"Var bodde det judiska folket, och hur försörjde de sig?",a:"På jordbruksfälten sydväst om feniciernas städer, upp mot bergen. Många av judarna var jordbrukare, medan andra ägnade sig åt boskapsuppfödning."},
+{id:92,k:"Judarna",q:"I vilka två riken var det judiska folket uppdelat?",a:"Israel, som var Nordriket, och Juda, som var Sydriket."},
+{id:93,k:"Judarna",q:"Vilken stad var judarnas huvudstad, och var låg den?",a:"Jerusalem, som låg högst upp på en bergskam i Juda. Den blev en av antikens mest omtalade städer."},
+{id:94,k:"Judarna",q:"Varför var Jerusalem så viktigt för judarna?",a:"Man vallfärdade dit för att besöka templet och offra till Gud, framför allt under de stora helgerna som påsk. Dit kom också många judar och andra folk för att köpa och sälja varor."},
+{id:95,k:"Judarna",q:"Vad var speciellt med judarnas religion?",a:"Judarna trodde att det bara fanns en enda gud. Det väckte förvåning hos andra folk, som var vana att dyrka många olika gudar samtidigt."},
+{id:96,k:"Judarna",q:"Vilka riken anföll de judiska rikena?",a:"Assyrier, babylonier och romare anföll under olika perioder. Området och templet i Jerusalem förstördes vid två tillfällen, senast av romarna. Idag återstår endast västra muren av det sista templet."},
+{id:97,k:"Judarna",q:"Vad är Tanakh?",a:"Judarnas äldsta historia och samtidigt en helig, religiös skrift. Den innehåller samma texter som Gamla testamentet i Bibeln, och är därför svår att tolka historiskt."},
+{id:98,k:"Judarna",q:"När byggdes det första templet i Jerusalem, och vad hände med det?",a:"Under kung Salomos tid på 900-talet f.Kr. enligt Bibelns texter. Det förstördes 400 år senare, då många av judarna fördes bort i fångenskap till Babylonien."}
+];
+const MAX=4, KEY='flodkulturer-v1';
+const STRICT=[
+ {namn:'Nivå 1',regel:'Var mycket generös. Har eleven fått med huvudpoängen är svaret rätt, även om exempel, detaljer eller delar av uppräkningar saknas.'},
+ {namn:'Nivå 2',regel:'Var generös. Huvudpoängen plus något av det viktigaste räcker för rätt. Enstaka exempel får saknas.'},
+ {namn:'Nivå 3',regel:'Var lagom sträng. Majoriteten av sakinnehållet i facit ska finnas med för rätt. Saknas mer än ett par saker blir det nästan.'},
+ {namn:'Nivå 4',regel:'Var sträng. Nästan hela facit ska täckas och begreppen ska användas korrekt för att svaret ska vara rätt.'},
+ {namn:'Nivå 5',regel:'Var mycket sträng. Hela facit ska täckas, begreppen ska användas korrekt och svaret ska vara tydligt formulerat.'}
+];
+const OMSKRIV=[
+ '','',
+ 'Skriv om frågan med en annan formulering, samma svårighetsgrad.',
+ 'Formulera om frågan så att den kräver en förklaring, inte bara en uppräkning. Börja gärna med varför eller hur.',
+ 'Gör frågan mer utmanande, till exempel som en jämförelse, en varför-fråga eller ett kort resonemang. Den ska fortfarande gå att besvara med hjälp av facit.'
+];
+let stats={}, cur=null, prevId=null, busy=false, streak=0, phrasing={};
+/* Senaste rättningen, så att en överklagan kan pröva den på nytt och räkna om
+   statistiken från hur den såg ut innan. */
+let sistaRattning=null;
+
+const $=id=>document.getElementById(id);
+const st=id=>stats[id]||(stats[id]={lvl:0,ratt:0,fel:0,senast:''});
+
+function load(){
+  try{const r=localStorage.getItem(KEY); if(r) stats=JSON.parse(r);}catch(e){stats={};}
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(stats));}catch(e){}
+}
+const PROV={
+ groq:{namn:'Groq',url:'https://api.groq.com/openai/v1/chat/completions',shape:'openai',
+   modeller:['openai/gpt-oss-20b','openai/gpt-oss-120b','qwen/qwen3.6-27b'],
+   snabb:'openai/gpt-oss-20b', stark:'openai/gpt-oss-120b', starkast:'openai/gpt-oss-120b',
+   hint:'Helt gratis, snabbast av alla. Skaffa nyckel på console.groq.com med bara en e-post, inget kort. Äldre modeller som llama-3.3-70b-versatile och alla Kimi/DeepSeek-varianter är avvecklade av Groq och visas därför inte.',
+   presets:[
+     {namn:'Snabbast (ingen eskalering)', snabb:'openai/gpt-oss-20b', stark:''},
+     {namn:'Balanserad (rekommenderad)', snabb:'openai/gpt-oss-20b', stark:'openai/gpt-oss-120b'},
+     {namn:'Mest exakt', snabb:'openai/gpt-oss-120b', stark:'qwen/qwen3.6-27b'}
+   ]},
+ gemini:{namn:'Gemini',url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',shape:'openai',
+   modeller:['gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-pro'],
+   snabb:'gemini-2.5-flash', stark:'gemini-2.5-pro', starkast:'gemini-2.5-pro',
+   hint:'Helt gratis. Skaffa nyckel på aistudio.google.com med ett Google-konto, inget betalkort behövs.'},
+ openrouter:{namn:'OpenRouter',url:'https://openrouter.ai/api/v1/chat/completions',shape:'openai',
+   modeller:['meta-llama/llama-3.3-70b-instruct:free','openai/gpt-4o-mini','google/gemini-2.0-flash-001','anthropic/claude-sonnet-4.5'],
+   snabb:'meta-llama/llama-3.3-70b-instruct:free', stark:'openai/gpt-4o-mini', starkast:'anthropic/claude-sonnet-4.5',
+   hint:'En nyckel som når många tjänster. Modeller som slutar på :free kostar inget men har lägre hastighetsgräns.'},
+ kimi:{namn:'Kimi',url:'https://api.moonshot.ai/v1/chat/completions',shape:'openai',
+   modeller:['kimi-k2.6','kimi-k3','kimi-k2.7-code'],
+   snabb:'kimi-k2.6', stark:'kimi-k3', starkast:'kimi-k3',
+   hint:'Nyckel från platform.moonshot.ai. Kontot behöver minst 1 dollar laddat innan nyckeln fungerar.'},
+ anthropic:{namn:'Anthropic',url:'https://api.anthropic.com/v1/messages',shape:'anthropic',
+   modeller:['claude-haiku-4-5-20251001','claude-sonnet-5','claude-opus-5'],
+   snabb:'claude-haiku-4-5-20251001', stark:'claude-sonnet-5', starkast:'claude-opus-5',
+   hint:'Nyckel från console.anthropic.com. Haiku rättar snabbt, Sonnet tar över vid osäkra svar.'},
+ openai:{namn:'OpenAI',url:'https://api.openai.com/v1/chat/completions',shape:'openai',
+   modeller:['gpt-4o-mini','gpt-4o','gpt-4.1-mini'],
+   snabb:'gpt-4o-mini', stark:'gpt-4o', starkast:'gpt-4o',
+   hint:'Nyckel från platform.openai.com.'},
+ mistral:{namn:'Mistral',url:'https://api.mistral.ai/v1/chat/completions',shape:'openai',
+   modeller:['mistral-small-latest','mistral-large-latest','open-mistral-nemo'],
+   snabb:'mistral-small-latest', stark:'mistral-large-latest', starkast:'mistral-large-latest',
+   hint:'Nyckel från console.mistral.ai. Har en gratis nivå med begränsad hastighet.'},
+ hf:{namn:'Hugging Face',url:'https://router.huggingface.co/v1/chat/completions',shape:'openai',
+   modeller:['mistralai/Mistral-Small-24B-Instruct-2501','meta-llama/Llama-3.3-70B-Instruct','Qwen/Qwen2.5-72B-Instruct'],
+   snabb:'mistralai/Mistral-Small-24B-Instruct-2501', stark:'meta-llama/Llama-3.3-70B-Instruct', starkast:'Qwen/Qwen2.5-72B-Instruct',
+   hint:'Token från huggingface.co/settings/tokens, med behörigheten "Make calls to Inference Providers".'},
+ custom:{namn:'Egen adress',url:'',shape:'openai',modeller:['llama3.2','qwen2.5'],
+   snabb:'llama3.2', stark:'', starkast:'',
+   hint:'För en modell du kör själv. Kör Ollama med OLLAMA_ORIGINS=* så webbläsaren släpps in.'}
+};
+/* ── DELADE NYCKLAR ──────────────────────────────────────────────────────────
+   Sidan hämtar en lista med delade nycklar ur filen keys.json, som ligger
+   bredvid den här filen. Alla som öppnar sidan får samma lista, och den som
+   vill lägga till en nyckel redigerar keys.json på GitHub — knappen "Lägg till
+   en nyckel" under fliken AI går direkt dit.
+
+   Slutar en nyckel fungera hoppar sidan automatiskt vidare till nästa i listan,
+   och den som fungerade blir standard från och med då.
+
+   Arrayen nedan är valfri. Lägg nycklar där om du hellre redigerar den här
+   filen än keys.json — de slås ihop med listan därifrån.
+
+   OBS: både keys.json och den här filen är publika. Nycklarna går att läsa av
+   vem som helst som besöker sidan. Lägg BARA in gratisnycklar utan betalkort
+   (console.groq.com, aistudio.google.com), aldrig en nyckel som är kopplad
+   till fakturering.                                                          */
+const SHARED_KEYS=[];
+const GRATIS=['groq','gemini'];
+const POOLFIL='keys.json';
+
+let POOL=[];
+const pool=()=>POOL;
+const harDelad=()=>POOL.length>0;
+
+function poolId(e){return e.prov+':'+String(e.key).slice(-6);}
+function poolNormalisera(rader){
+  const ut=[];
+  (Array.isArray(rader)?rader:[]).forEach(r=>{
+    if(!r||typeof r!=='object')return;
+    const prov=String(r.prov||'').trim(), key=String(r.key||'').trim();
+    if(!key||!PROV[prov])return;
+    const e={
+      namn:String(r.namn||PROV[prov].namn).trim()||PROV[prov].namn,
+      prov, key,
+      model:String(r.model||'').trim()||PROV[prov].snabb||PROV[prov].modeller[0],
+      model2:String(r.model2||'').trim()
+    };
+    e.id=poolId(e);
+    if(!ut.some(x=>x.id===e.id))ut.push(e);
+  });
+  return ut;
+}
+async function laddaPool(){
+  let fran=[];
+  try{
+    const r=await fetch(POOLFIL+'?v='+Date.now(),{cache:'no-store'});
+    if(r.ok){
+      const d=await r.json();
+      fran=Array.isArray(d)?d:(d&&d.nycklar)||[];
+    }
+  }catch(e){ /* filen saknas eller är trasig — då blir listan bara kortare */ }
+  POOL=poolNormalisera([].concat(SHARED_KEYS,fran));
+}
+
+/* Vilken delad nyckel som gäller, och vilka som slutat fungera. Det här sparas
+   per webbläsare — utan en server kan en elevs resultat inte nå de andra. */
+function poolDoda(){
+  try{ return JSON.parse(localStorage.getItem('flod-pooldead')||'{}')||{}; }catch(e){ return {}; }
+}
+function poolSkrivDoda(m){
+  try{ localStorage.setItem('flod-pooldead',JSON.stringify(m)); }catch(e){}
+}
+function poolDodMarkera(id,orsak,upptagen){
+  const m=poolDoda();
+  m[id]={orsak:orsak||'',tid:new Date().toISOString(),till:upptagen?Date.now()+5*60*1000:0};
+  poolSkrivDoda(m);
+}
+function poolLevande(id){
+  const d=poolDoda()[id];
+  if(!d)return true;
+  if(d.till&&Date.now()>d.till)return true;   // "upptagen" går över av sig själv
+  return false;
+}
+function poolStandard(){return localStorage.getItem('flod-poolval')||'';}
+function poolSattStandard(id){
+  localStorage.setItem('flod-poolval',id);
+  const m=poolDoda();
+  if(m[id]){delete m[id];poolSkrivDoda(m);}
+}
+/* Standardnyckeln först, sedan de som lever, sist de döda — så att sidan
+   försöker igen istället för att ge upp när hela listan råkat bli utdömd. */
+function poolOrdning(){
+  const vald=poolStandard();
+  const std=POOL.filter(e=>e.id===vald);
+  const lev=POOL.filter(e=>e.id!==vald&&poolLevande(e.id));
+  const dod=POOL.filter(e=>e.id!==vald&&!poolLevande(e.id));
+  return std.concat(lev,dod);
+}
+function poolAktiv(){return poolOrdning()[0]||null;}
+
+function getSource(){
+  const v=localStorage.getItem('flod-keysource');
+  if(v==='delad')return harDelad()?'delad':'egen';
+  if(v==='egen')return 'egen';
+  return harDelad()?'delad':'egen';
+}
+function setSource(v){localStorage.setItem('flod-keysource',v);}
+function egenProv(){return localStorage.getItem('flod-prov')||'groq';}
+function getProv(){
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.prov;}
+  return egenProv();
+}
+function getKey(){
+  if(getSource()==='delad'){const a=poolAktiv();return a?a.key:'';}
+  return (localStorage.getItem('flod-key-'+egenProv())||'').trim();
+}
+function getModel(){
+  const p=getProv();
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.model||PROV[p].snabb||PROV[p].modeller[0];}
+  return localStorage.getItem('flod-model-'+p)||PROV[p].snabb||PROV[p].modeller[0];
+}
+function getModel2(){
+  const p=getProv();
+  if(getSource()==='delad'){const a=poolAktiv();if(a)return a.model2||'';}
+  const m=localStorage.getItem('flod-model2-'+p);return m===null?(PROV[p].stark||''):m.trim();
+}
+function getUrl(){const p=getProv();return p==='custom'?(localStorage.getItem('flod-base')||'').trim():PROV[p].url;}
+/* Den kraftfullaste modellen en tjänst har. Används när en överklagan ska prövas —
+   då är det värt att vänta några sekunder extra på ett bättre omdöme. */
+function modelStarkast(p){const c=PROV[p]||{};return c.starkast||c.stark||c.snabb||(c.modeller&&c.modeller[0])||'';}
+
+/* Nycklar som visat sig sluta fungera flaggas per tjänst, så att eleven får
+   veta det på övningsfliken istället för att bara se ett kryptiskt felmeddelande. */
+function keyBad(p){return localStorage.getItem('flod-keybad-'+p)||'';}
+function setKeyBad(p,txt){
+  if(txt)localStorage.setItem('flod-keybad-'+p,txt);
+  else localStorage.removeItem('flod-keybad-'+p);
+  renderKeyWarn();
+}
+function renderKeyWarn(){
+  const w=$('keywarn');if(!w)return;
+  const txt=getSource()==='egen'?keyBad(egenProv()):'';
+  if(txt){$('keywarntext').textContent=txt+(harDelad()?' Rättningen använder de delade nycklarna så länge.':'');w.style.display='block';}
+  else w.style.display='none';
+}
+
+let LOG=[];
+function logAdd(e){LOG.push({t:new Date().toLocaleTimeString(),...e});if(LOG.length>40)LOG.shift();}
+function logDump(){
+  if(!LOG.length)return'Inga anrop gjorda än.';
+  return LOG.slice().reverse().map(l=>`[${l.t}] ${l.prov} · ${l.model}\nURL: ${l.url}\nStatus: ${l.status}${l.error?'\nFEL: '+l.error:''}\n${l.snippet?'Svar: '+l.snippet:''}`).join('\n\n---\n\n');
+}
+
+function felText(status,em,namn,model){
+  const e=String(em||'');
+  if(status===401||status===403)return 'Nyckeln godtogs inte av '+namn+'. Kontrollera att du kopierat hela nyckeln, utan mellanslag före eller efter, och att den hör till just '+namn+'.';
+  if(status===429)return 'För många frågor just nu ('+namn+'). Vänta en halvminut och försök igen.';
+  if(status===402||/quota|credit|billing|insufficient/i.test(e))return namn+' säger att kontot saknar krediter eller har nått sin gräns. Fyll på kontot, eller byt tjänst under fliken AI.';
+  if(status===404||/model/i.test(e))return 'Modellen '+model+' finns inte hos '+namn+'. Välj en annan modell under fliken AI.';
+  if(status>=500)return namn+' har problem just nu. Det är inget fel på din nyckel — försök igen om en stund.';
+  return 'Fel '+status+' från '+namn+': '+(e||'okänt fel');
+}
+
+let ac=null;
+function tone(f,t,d,v,type){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(0,ac.currentTime+t);g.gain.linearRampToValueAtTime(v,ac.currentTime+t+0.01);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+t+d);o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+d+0.05);}
+function audio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();}
+const sRight=()=>[523,659,784].forEach((f,i)=>tone(f,i*0.07,0.2,0.13));
+const sBig=()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.08,0.33,0.13));
+const sHalf=()=>{tone(494,0,0.16,0.1);tone(587,0.1,0.2,0.1);};
+const sWrong=()=>{tone(196,0,0.18,0.09,'sine');tone(165,0.1,0.24,0.09,'sine');};
+const COLS=['#C08423','#2E7D6E','#26397A','#A6462C','#EFEBDF'];
+function burst(n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const r=$('res').getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+20;
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');p.className='pop';
+    p.style.background=COLS[i%COLS.length];p.style.left=cx+'px';p.style.top=cy+'px';
+    document.body.appendChild(p);
+    const a=Math.random()*Math.PI*2,d=70+Math.random()*150;
+    p.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},
+      {transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d+90}px) rotate(${Math.random()*720-360}deg)`,opacity:0}],
+      {duration:950+Math.random()*550,easing:'cubic-bezier(.2,.7,.4,1)'}).onfinish=()=>p.remove();
+  }
+}
+
+/* ── ÄMNESVAL ────────────────────────────────────────────────────────────────
+   Eleven väljer vilka områden övningen ska hämta frågor ur. Listan sorteras
+   svagast först, så numret i listan är samtidigt rekommendationen: 1 är det du
+   kan sämst. Valet ligger i webbläsaren och går att ändra när som helst genom
+   att trycka på områdesnamnet ovanför frågan.                                */
+const AMNEN_KEY='flod-amnen';
+function allaAmnen(){return [...new Set(CARDS.map(c=>c.k))];}
+function sparatVal(){
+  try{const v=JSON.parse(localStorage.getItem(AMNEN_KEY)||'null');
+    return Array.isArray(v)?v.filter(k=>allaAmnen().indexOf(k)>=0):null;}catch(e){return null;}
+}
+function harValtAmnen(){const v=sparatVal();return !!(v&&v.length);}
+function valdaAmnen(){const v=sparatVal();return (v&&v.length)?v:allaAmnen();}
+function sattAmnen(v){try{localStorage.setItem(AMNEN_KEY,JSON.stringify(v));}catch(e){}}
+function amnesKunskap(k){
+  const cs=CARDS.filter(c=>c.k===k);
+  return cs.length?cs.reduce((a,c)=>a+st(c.id).lvl,0)/(cs.length*MAX):0;
+}
+/* Svagast först — det är den ordningen som är rekommendationen. */
+function amnenSvagastForst(){
+  return allaAmnen().map(k=>({k,niva:amnesKunskap(k),antal:CARDS.filter(c=>c.k===k).length}))
+    .sort((a,b)=>a.niva-b.niva||a.k.localeCompare(b.k,'sv'));
+}
+
+let valTmp=[];
+function visaAmnesval(){
+  audio();
+  valTmp=valdaAmnen().slice();
+  $('amnesval').style.display='block';
+  $('ovaKort').style.display='none';
+  ritaAmnesval();
+  show('ova');
+}
+function doljAmnesval(){
+  $('amnesval').style.display='none';
+  $('ovaKort').style.display='block';
+}
+function ritaAmnesval(){
+  const rader=amnenSvagastForst();
+  /* Utan svar bakom sig finns ingen rangordning att rekommendera — då är alla
+     områden lika okända, och listan står bara i bokstavsordning. */
+  const harData=rader.some(r=>r.niva>0);
+  const rek=harData?rader.filter(r=>r.niva<1).slice(0,3).map(r=>r.k):[];
+  let h=`<p style="margin:0 0 5px;font-family:'Fraunces',serif;font-size:21px">Vad vill du öva på?</p>
+  <p style="margin:0 0 14px;font-size:13px;color:#6A6558;line-height:1.5">${harData
+    ?'Sorterat efter hur säkert du kan varje område — det du kan sämst ligger överst, så nummer 1 är det som behövs mest. Kryssa i det du vill ha med.'
+    :'Kryssa i det du vill öva på. När du har svarat på några frågor sorteras listan om efter vad du kan sämst, och de områden som behövs mest märks som rekommenderade.'}</p>`;
+  rader.forEach((r,i)=>{
+    const vald=valTmp.indexOf(r.k)>=0;
+    h+=`<label class="amne">
+      <input type="checkbox" data-amne="${esc(r.k)}"${vald?' checked':''}>
+      <span class="nr">${i+1}</span>
+      <span class="an">${esc(r.k)}${rek.indexOf(r.k)>=0?'<span class="rek">rekommenderas</span>':''}
+        <span class="am">${r.antal} frågor · du kan ${Math.round(r.niva*100)} procent</span></span>
+      <span class="bar"><span style="width:${Math.round(r.niva*100)}%"></span></span>
+    </label>`;
+  });
+  h+=`<div class="row"><button class="act ghost" id="amAlla">Alla ämnen</button>${harData?'<button class="act ghost" id="amSvag">De tre svagaste</button>':''}</div>
+  <div id="amErr" class="err" style="display:none">Kryssa i minst ett ämne.</div>
+  <div class="row"><button class="act" id="amKlar">Börja öva</button></div>`;
+  $('amnesval').innerHTML=h;
+  $('amnesval').querySelectorAll('input[data-amne]').forEach(b=>{
+    b.onchange=()=>{
+      const k=b.getAttribute('data-amne'), i=valTmp.indexOf(k);
+      if(b.checked&&i<0)valTmp.push(k);
+      if(!b.checked&&i>=0)valTmp.splice(i,1);
+      $('amErr').style.display='none';
+    };
+  });
+  $('amAlla').onclick=()=>{audio();valTmp=allaAmnen();ritaAmnesval();};
+  if($('amSvag'))$('amSvag').onclick=()=>{audio();valTmp=amnenSvagastForst().slice(0,3).map(r=>r.k);ritaAmnesval();};
+  $('amKlar').onclick=()=>{
+    if(!valTmp.length){$('amErr').style.display='block';return;}
+    audio();sattAmnen(valTmp);doljAmnesval();nextCard();$('ans').focus();
+  };
+}
+
+function pick(){
+  const valda=valdaAmnen();
+  let pool=CARDS.filter(c=>valda.indexOf(c.k)>=0&&c.id!==prevId);
+  if(!pool.length)pool=CARDS.filter(c=>valda.indexOf(c.k)>=0);
+  if(!pool.length)pool=CARDS.filter(c=>c.id!==prevId);
+  const w=pool.map(c=>{const l=st(c.id).lvl;return Math.pow(MAX-l,2)+1;});
+  let t=w.reduce((a,b)=>a+b,0), r=Math.random()*t;
+  for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i];}
+  return pool[0];
+}
+
+function render(){
+  $('cat').innerHTML=esc(cur.k)+' <span style="color:#8A836F">· byt</span>';
+  $('strict').textContent=STRICT[st(cur.id).lvl].namn;
+  $('q').textContent=phrasing[cur.id]||cur.q;
+  $('streak').textContent=streak+' i rad';
+  $('ans').value='';$('res').innerHTML='';$('err').style.display='none';
+  $('check').disabled=false;$('check').textContent='Rätta svaret';
+}
+
+function nextCard(){prevId=cur?cur.id:null;sistaRattning=null;cur=pick();render();}
+
+async function api(prompt,modelOverride,entry){
+  const delad=!!entry;
+  const p=delad?entry.prov:getProv(), cfg=PROV[p];
+  const key=delad?entry.key:getKey();
+  const url=delad?cfg.url:getUrl();
+  const useModel=modelOverride||(delad?(entry.model||cfg.snabb||cfg.modeller[0]):getModel());
+  if(!url){logAdd({prov:cfg.namn,model:useModel,url:'(ingen)',status:'—',error:'Ingen adress angiven.'});throw new Error('Ingen adress angiven. Öppna fliken AI.');}
+  if(!key && p!=='custom'){logAdd({prov:cfg.namn,model:useModel,url,status:'—',error:'Ingen nyckel angiven.'});throw new Error('Ingen API-nyckel angiven. Öppna fliken AI.');}
+  let headers={"content-type":"application/json"}, body;
+  if(cfg.shape==='anthropic'){
+    headers["x-api-key"]=key;
+    headers["anthropic-version"]="2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"]="true";
+    body={model:useModel,max_tokens:1000,messages:[{role:"user",content:prompt}]};
+  }else{
+    if(key) headers["authorization"]="Bearer "+key;
+    body={model:useModel,max_tokens:1000,messages:[{role:"user",content:prompt}]};
+  }
+  let r;
+  try{ r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body)}); }
+  catch(e){
+    logAdd({prov:cfg.namn,model:useModel,url,status:'nätverksfel',error:e.message||'fetch misslyckades'});
+    throw new Error('Nådde inte '+cfg.namn+'. Kolla adressen, nätet eller att tjänsten tillåter anrop från webbläsaren.');
+  }
+  const rawText=await r.text();
+  const snippet=rawText.slice(0,500);
+  let d={};
+  try{ d=JSON.parse(rawText); }catch(e){}
+  if(!r.ok){
+    const em=(d.error&&(d.error.message||d.error))||snippet||('HTTP '+r.status);
+    logAdd({prov:cfg.namn,model:useModel,url,status:r.status,error:em,snippet});
+    const txt=felText(r.status,em,cfg.namn,useModel);
+    const err=new Error(txt);
+    err.status=r.status;
+    err.nyckelfel=(r.status===401||r.status===403);
+    if(err.nyckelfel&&!delad&&getSource()==='egen')setKeyBad(p,txt);
+    throw err;
+  }
+  logAdd({prov:cfg.namn,model:useModel,url,status:r.status,snippet});
+  if(!delad&&getSource()==='egen'&&keyBad(p))setKeyBad(p,'');
+  if(cfg.shape==='anthropic'){
+    if(!d.content) throw new Error('Tomt svar från '+cfg.namn+'.');
+    return d.content.map(b=>b.type==='text'?b.text:'').join('').trim();
+  }
+  const c=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+  if(!c) throw new Error('Tomt svar från '+cfg.namn+'.');
+  return String(c).trim();
+}
+
+/* Går igenom de delade nycklarna i tur och ordning. Blir en nyckel avvisad
+   hoppar vi vidare till nästa, och den som svarar blir standard från och med då. */
+async function apiPool(prompt,model,starkast){
+  const ordning=poolOrdning();
+  if(!ordning.length)throw new Error('Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
+  let sist=null;
+  for(let i=0;i<ordning.length;i++){
+    const e=ordning[i];
+    try{
+      const t=await api(prompt,starkast?modelStarkast(e.prov):((model&&i===0)?model:null),e);
+      poolSattStandard(e.id);
+      return t;
+    }catch(err){
+      sist=err;
+      const st=err.status;
+      if(st===401||st===403||st===402||st===404){ poolDodMarkera(e.id,err.message,false); continue; }
+      if(st===429){ poolDodMarkera(e.id,err.message,true); continue; }
+      throw err;   // nätverk eller serverfel — det är inte nyckeln det är fel på
+    }
+  }
+  throw sist||new Error('Ingen av de delade nycklarna fungerade.');
+}
+
+let delatFallback=false;
+async function callAI(prompt,model,starkast){
+  if(getSource()==='delad')return apiPool(prompt,model,starkast);
+  try{ return await api(prompt,model); }
+  catch(e){
+    if(e&&e.nyckelfel&&harDelad()){
+      const t=await apiPool(prompt,null,starkast);
+      delatFallback=true;
+      return t;
+    }
+    throw e;
+  }
+}
+
+/* Anropar den starkaste modell som finns att tillgå, oavsett vilken som annars rättar. */
+async function callStark(prompt){
+  const m=getSource()==='delad'?null:modelStarkast(getProv());
+  return callAI(prompt,m,true);
+}
+
+async function rephrase(c,lvl){
+  try{
+    const t=await callAI(`Du gör om en historiefråga för en svensk elev i årskurs 7. Den ska testa exakt samma kunskap och gå att besvara med facit nedan. ${OMSKRIV[Math.min(lvl,4)]} Svara endast med den nya frågan, inget annat.\n\nFråga: ${c.q}\nFacit: ${c.a}`);
+    if(t&&t.length<200)phrasing[c.id]=t.replace(/^["']|["']$/g,'');
+  }catch(e){}
+}
+
+async function check(){
+  if(busy)return;
+  audio();
+  const v=$('ans').value.trim();
+  if(v.length<2){$('err').textContent='Skriv ett svar först.';$('err').style.display='block';return;}
+  $('err').style.display='none';busy=true;delatFallback=false;
+  $('check').disabled=true;$('check').textContent='Rättar…';
+  const shown=phrasing[cur.id]||cur.q;
+  const lvl=st(cur.id).lvl;
+  const prompt=`Du rättar ett läxförhör i historia för en elev i årskurs 7.
+
+FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven blir förhörd på, så de avgör vad som är viktigt och hur strängt du kräver täckning. Men facit är inte en lista att pricka av ord för ord: använd din egen kunskap om ämnet för att avgöra om det eleven skrivit är sant, och tänk själv istället för att bara jämföra texter.
+
+Rätta så här:
+- Stavning, ordföljd och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
+- TVÅ NAMN PÅ SAMMA SAK ÄR SAMMA SAK. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Cheopspyramiden och Khufus pyramid samma byggnad, Mesopotamien och Tvåflodslandet samma område. Kräv ALDRIG att eleven skriver båda namnen, och skriv aldrig att det andra namnet saknas.
+- Står två namn på samma sak i facit, ofta efter ett komma eller inom parentes, är det EN sak i uppräkningen — inte två. Räkna antalet saker i facit rätt innan du bedömer om eleven missat något.
+- Svenska, engelska eller det ursprungliga namnet duger lika bra: Eufrat och Euphrates, Nilen och Nile, Gula floden och Yellow River.
+- Ungefärliga årtal räcker. Ligger eleven inom ett par hundra år, eller skriver århundradet istället för årtalet, är det rätt.
+- Skriver eleven något korrekt som inte står i facit är det aldrig fel. Bara ett felaktigt sakpåstående drar ner betyget.
+- ${STRICT[lvl].regel}
+- Bedöm bara det som frågan faktiskt frågar efter. Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för att eleven missat något som hör till en annan fråga.
+- Skriv aldrig att något saknas om det inte står i facit.
+- FACIT ÄR INTE ALLTID DET ENDA MÖJLIGA SVARET. Ber frågan om ett antal exempel — "nämn två", "ge exempel", "vilka är några" — duger vilka sakligt korrekta exempel som helst. Abu Simbel är ett lika riktigt svar på "nämn två berömda egyptiska byggnader" som Karnak, även om facit råkar nämna just Karnak. Underkänn ALDRIG ett exempel bara för att det inte står i facit: bara om det är sakligt fel eller inte svarar på frågan.
+- Ställer frågan däremot en bestämd fråga med ett bestämt svar — vilka floder, vilket årtal, vad ordet betyder, vad som faktiskt hände — då är facit svaret, och eleven ska täcka det.
+- Är du osäker på om ett exempel eleven gett utanför facit stämmer, sätt "saker": false så att en starkare modell får titta på det. Gissa inte fel på elevens bekostnad.
+
+${cur.oppen?`DEN HÄR FRÅGAN ÄR ÖPPEN. Facit visar bara ett par av många möjliga exempel. Har eleven gett så många sakligt korrekta exempel som frågan ber om är svaret rätt, även om inget av dem står i facit. Skriv då ingenting i "saknas". Detta går före regeln om stränghet ovan.
+
+`:''}Fråga: ${shown}
+Facit ur anteckningarna: ${cur.a}
+Elevens svar: ${v}
+
+Svara ENDAST med ett JSON-objekt, ingen annan text och inga kodblock:
+{"verdict":"ratt" eller "nastan" eller "fel","feedback":"högst två meningar på svenska, tilltala eleven med du","saknas":"det viktigaste som saknades, eller tom sträng om inget saknas","saker":true eller false,"invandning":"tom sträng, eller din invändning mot anteckningarna"}
+
+"saker": sätt false bara om bedömningen är genuint svår eller tvetydig. Annars true.
+
+"invandning": lämna TOM i normalfallet. Fyll bara i den om anteckningarnas facit är direkt sakfel, eller om något så viktigt saknas att eleven riskerar att lära sig fel. Betygsätt ALDRIG eleven efter din invändning: verdict ska alltid utgå från anteckningarna som de står.`;
+  const m1=getModel(), m2=getModel2();
+  let o=null,fel='',raw='',anvandStark=false;
+  for(let f=0;f<2&&!o;f++){
+    try{
+      raw=await callAI(f===0?prompt:(prompt+'\n\nViktigt: svara med enbart JSON-objektet. Ingen inledning, ingen förklaring, inga kodblock.'),m1);
+      o=tolkaSvar(raw);
+    }catch(e){o=null;fel=e.message||'';}
+  }
+  let tillagg='';
+  const harInvandning = o && o.invandning && o.invandning.length>3;
+  if(m2 && m2!==m1 && (!o||o.saker===false||o.verdict==='nastan'||harInvandning)){
+    let p2=prompt;
+    if(harInvandning){
+      p2=prompt+`\n\nEN SNABBARE RÄTTARE HAR GJORT DENNA INVÄNDNING MOT ANTECKNINGARNA:\n"${o.invandning}"\n\nTa ställning till invändningen. Håll bara med om den är sakligt korrekt OCH viktig nog att en elev i årskurs 7 behöver veta den. Var restriktiv: småsaker, nyanser och alternativa formuleringar räknas inte.\nLägg till två fält i ditt JSON-svar: "haller_med" (true eller false) och "tillagg" (en mening som säger vad som bör läggas till, eller tom sträng). Elevens verdict ska fortfarande utgå från anteckningarna som de står.`;
+    }
+    try{
+      const raw2=await callAI(p2,m2);
+      const o2=tolkaSvar(raw2);
+      if(o2){
+        if(harInvandning&&o2.haller_med&&o2.tillagg)tillagg=o2.tillagg;
+        o=o2;anvandStark=true;fel='';
       }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+      else if(!o){raw=raw2;}
+    }catch(e){ if(!o) fel=e.message||fel; }
+  }
+  busy=false;$('check').textContent='Rätta svaret';
+  if(!o){
+    let m=fel?('Kunde inte rätta: '+fel):'Modellen svarade inte med giltig JSON.';
+    if(!fel&&raw)m+=' Svaret började med: '+raw.slice(0,90);
+    $('err').innerHTML=esc(m)+'<br><details style="margin-top:8px"><summary style="cursor:pointer;color:#1B2A5B">Visa logg</summary><pre style="white-space:pre-wrap;font-size:11px;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:8px;margin-top:6px;max-height:220px;overflow:auto">'+esc(logDump())+'</pre></details>';
+    $('err').style.display='block';$('check').disabled=false;return;
+  }
+  const s=st(cur.id);
+  const fore={lvl:s.lvl,ratt:s.ratt,fel:s.fel};
+  s.senast=new Date().toISOString().slice(0,10);
+  if(tillagg){
+    s.tillagg=s.tillagg||[];
+    if(!s.tillagg.includes(tillagg)&&s.tillagg.length<4)s.tillagg.push(tillagg);
+  }
+  let cls,head;
+  if(o.verdict==='ratt'){
+    s.lvl=Math.min(MAX,s.lvl+1);s.ratt++;streak++;cls='v-ratt';head='Rätt';
+    if(streak%5===0){sBig();burst(46);}else{sRight();burst(18);}
+    if(s.lvl>=2)rephrase(cur,s.lvl);
+  }else if(o.verdict==='nastan'){
+    s.ratt++;streak=0;cls='v-nastan';head='Nästan';sHalf();
+  }else{
+    s.lvl=Math.max(0,s.lvl-1);s.fel++;streak=0;cls='v-fel';head='Inte riktigt';sWrong();
+  }
+  $('streak').textContent=streak+' i rad';
+  $('res').innerHTML=`<div class="verdict ${cls}">
+    <p class="vt">${head}${anvandStark?' · dubbelkollad':''}${delatFallback?' · rättad med den delade nyckeln':''}</p>
+    <div>${esc(o.feedback||'')}</div>
+    ${o.saknas?`<div class="facit"><b>Det här saknades</b>${esc(o.saknas)}</div>`:''}
+    <div class="facit"><b>Facit ur anteckningarna</b>${esc(cur.a)}</div>
+    ${tillagg?`<div class="facit" style="border-top:1px solid var(--ochre)"><b style="color:var(--ochre)">Tillägg utöver anteckningarna</b>${esc(tillagg)}<br><span style="font-size:11px;color:#8A836F">Sparat i registret. Detta står inte i anteckningarna.</span></div>`:''}
+  </div>
+  <div id="ovWrap"></div>
+  <div class="row"><button class="act" id="nx">Nästa fråga</button></div>`;
+  $('nx').onclick=()=>{audio();nextCard();$('ans').focus();};
+  sistaRattning={id:cur.id, kort:cur, shown, svar:v, lvl, fore, verdict:o.verdict, feedback:o.feedback||'', saknas:o.saknas||'', provad:false};
+  renderOverklaga();
+  save();
+}
+
+/* ── ÖVERKLAGAN ──────────────────────────────────────────────────────────────
+   Tycker eleven att rättningen blev fel går det att skriva en kort motivering.
+   Den prövas av den starkaste modell som finns att tillgå, som ser frågan,
+   facit, elevens svar, den första rättningens dom och elevens argument — och
+   avgör sakligt. Går domen elevens väg räknas statistiken om från hur den såg
+   ut innan rättningen, så att ett felaktigt minus inte blir kvar.            */
+function renderOverklaga(){
+  const w=$('ovWrap'); if(!w||!sistaRattning) return;
+  if(sistaRattning.verdict==='ratt'||sistaRattning.provad){w.innerHTML='';return;}
+  w.innerHTML='<button class="act ghost" id="ovStart" style="width:100%;margin-top:12px">Överklaga rättningen</button>';
+  $('ovStart').onclick=oppnaOverklagan;
+}
+
+function oppnaOverklagan(){
+  audio();
+  const w=$('ovWrap');
+  w.innerHTML=`<div class="appeal">
+    <p class="ovt">Överklaga</p>
+    <p class="ovh">Skriv kort varför du tycker att rättningen blev fel. Den starkaste modellen läser frågan, facit, ditt svar och din motivering och avgör sakligt — den ger dig inte rätt bara för att du ber om det.</p>
+    <textarea id="ovText" placeholder="Till exempel: Huang He och Gula floden är samma flod, så jag räknade upp alla fem."></textarea>
+    <div id="ovErr" class="err" style="display:none"></div>
+    <div class="row"><button class="act ghost" id="ovAvbryt">Avbryt</button><button class="act" id="ovSkicka">Skicka överklagan</button></div>
+  </div>`;
+  $('ovAvbryt').onclick=()=>{audio();renderOverklaga();};
+  $('ovSkicka').onclick=provaOverklagan;
+  $('ovText').focus();
+}
+
+async function provaOverklagan(){
+  if(busy||!sistaRattning)return;
+  const mot=$('ovText').value.trim();
+  if(mot.length<3){$('ovErr').textContent='Skriv en kort motivering först.';$('ovErr').style.display='block';return;}
+  $('ovErr').style.display='none';
+  busy=true;$('ovSkicka').disabled=true;$('ovAvbryt').disabled=true;$('ovSkicka').textContent='Prövar…';
+  const r=sistaRattning;
+  const domar={ratt:'rätt',nastan:'nästan rätt',fel:'fel'}[r.verdict]||r.verdict;
+  const prompt=`Du är överdomare vid ett läxförhör i historia för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
+
+FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven förhörs på, så de avgör vad som är viktigt. Men facit är inte en lista att pricka av ord för ord — använd din egen kunskap om ämnet och tänk själv.
+${r.kort.oppen?`
+DEN HÄR FRÅGAN ÄR ÖPPEN. Facit visar bara ett par av många möjliga exempel. Har eleven gett så många sakligt korrekta exempel som frågan ber om är svaret rätt, även om inget av dem står i facit.
+`:''}
+Fråga: ${r.shown}
+Facit ur anteckningarna: ${r.kort.a}
+Elevens svar: ${r.svar}
+Första rättningens dom: ${domar}
+Första rättningens motivering: ${r.feedback}${r.saknas?`\nFörsta rättningen sa att detta saknades: ${r.saknas}`:''}
+
+ELEVENS ÖVERKLAGAN:
+"${mot}"
+
+Pröva så här:
+- Avgör om det eleven skriver i sin överklagan är sakligt korrekt. Ge eleven rätt bara när det stämmer — aldrig för att hen argumenterar väl, ber snällt eller framhärdar.
+- Två namn på samma sak är samma sak. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Mesopotamien och Tvåflodslandet samma område. Har eleven rätt i att första rättningen räknade ett alternativnamn som en egen sak i uppräkningen, ska överklagandet bifallas.
+- Ber frågan om exempel duger vilka sakligt korrekta exempel som helst. Har första rättningen underkänt ett exempel enbart för att det inte stod i facit, och exemplet faktiskt stämmer, ska överklagandet bifallas. Abu Simbel är ett lika riktigt svar på "nämn två berömda egyptiska byggnader" som Karnak.
+- Avgör med din egen ämneskunskap om elevens exempel verkligen stämmer. Gör det inte det, avslå och förklara varför.
+- Stavning, ordföljd, blandat svenska och engelska och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
+- Ungefärliga årtal räcker.
+- Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för något som hör till en annan fråga.
+- Var lika sträng som nivån kräver: ${STRICT[r.lvl].regel}
+- Blev första rättningen riktig ska du stå fast vid den och förklara varför, vänligt men tydligt.
+
+Svara ENDAST med ett JSON-objekt, ingen annan text och inga kodblock:
+{"beslut":"bifall" eller "delvis" eller "avslag","verdict":"ratt" eller "nastan" eller "fel","motivering":"högst tre meningar på svenska, tilltala eleven med du, och förklara varför du dömer som du gör"}
+
+"verdict" är den nya slutgiltiga bedömningen efter din prövning. Vid avslag ska den vara densamma som första rättningens dom.`;
+  let d=null,fel='';
+  try{
+    const raw=await callStark(prompt);
+    d=tolkaDom(raw);
+    if(!d)fel='Modellen svarade inte med giltig JSON.';
+  }catch(e){fel=e.message||'Anropet misslyckades.';}
+  busy=false;
+  if(!d){
+    $('ovSkicka').disabled=false;$('ovAvbryt').disabled=false;$('ovSkicka').textContent='Skicka överklagan';
+    $('ovErr').textContent='Kunde inte pröva överklagandet: '+fel;$('ovErr').style.display='block';
+    return;
+  }
+  r.provad=true;
+  // Räkna om från hur statistiken såg ut före rättningen, och lägg på den nya domen.
+  const s=st(r.id);
+  s.lvl=r.fore.lvl; s.ratt=r.fore.ratt; s.fel=r.fore.fel;
+  if(d.verdict==='ratt'){s.lvl=Math.min(MAX,s.lvl+1);s.ratt++;}
+  else if(d.verdict==='nastan'){s.ratt++;}
+  else{s.lvl=Math.max(0,s.lvl-1);s.fel++;}
+  const battre=d.verdict!==r.verdict&&d.verdict!=='fel';
+  if(d.verdict==='ratt'){streak++;$('streak').textContent=streak+' i rad';sRight();burst(18);}else{sHalf();}
+  const rubrik={bifall:'Överklagandet bifalls',delvis:'Överklagandet bifalls delvis',avslag:'Överklagandet avslås'}[d.beslut];
+  const nyDom={ratt:'Rätt',nastan:'Nästan',fel:'Inte riktigt'}[d.verdict];
+  $('ovWrap').innerHTML=`<div class="dom">
+    <p class="vt">${rubrik}</p>
+    <div>${esc(d.motivering||'')}</div>
+    <p class="dm">Ny bedömning: <b>${nyDom}</b>${battre?' — nivån är rättad.':'.'} Prövat av den starkaste modellen.</p>
+  </div>`;
+  save();
+  if(views&&views.stat)statView();
+}
+
+function tolkaDom(t){
+  let s=String(t).replace(/```json/gi,'').replace(/```/g,'').trim();
+  const i=s.indexOf('{'), j=s.lastIndexOf('}');
+  if(i<0||j<=i) return null;
+  let o;
+  try{ o=JSON.parse(s.slice(i,j+1)); }
+  catch(e){
+    try{ o=JSON.parse(s.slice(i,j+1).replace(/,\s*([}\]])/g,'$1')); }catch(e2){ return null; }
+  }
+  if(!o||typeof o!=='object') return null;
+  let b=String(o.beslut||o.decision||'').toLowerCase().trim();
+  if(/delvis|partial/.test(b)) b='delvis';
+  else if(/bifall|medh|ratt|rätt|^ja$/.test(b)) b='bifall';
+  else b='avslag';
+  let v=String(o.verdict||o.bedomning||o['bedömning']||'').toLowerCase().trim();
+  if(/^(ratt|rätt|correct)$/.test(v)) v='ratt';
+  else if(/nastan|nästan|delvis|partial/.test(v)) v='nastan';
+  else if(/fel|incorrect/.test(v)) v='fel';
+  else v = b==='bifall'?'ratt':(b==='delvis'?'nastan':'fel');
+  return {beslut:b, verdict:v, motivering:String(o.motivering||o.feedback||o.kommentar||'')};
+}
+
+function tolkaSvar(t){
+  let s=String(t).replace(/```json/gi,'').replace(/```/g,'').trim();
+  const i=s.indexOf('{'), j=s.lastIndexOf('}');
+  if(i<0||j<=i) return null;
+  let o;
+  try{ o=JSON.parse(s.slice(i,j+1)); }
+  catch(e){
+    try{ o=JSON.parse(s.slice(i,j+1).replace(/,\s*([}\]])/g,'$1')); }catch(e2){ return null; }
+  }
+  if(!o||typeof o!=='object') return null;
+  let v=String(o.verdict||o.bedomning||o['bedömning']||'').toLowerCase().trim();
+  if(/^(ratt|rätt|correct|true|ja)$/.test(v)||v.indexOf('helt r')===0) v='ratt';
+  else if(/nastan|nästan|delvis|partial/.test(v)) v='nastan';
+  else if(/fel|incorrect|false|nej/.test(v)) v='fel';
+  else return null;
+  return {verdict:v, feedback:String(o.feedback||o.kommentar||''), saknas:String(o.saknas||o.missing||''), saker:o.saker===false?false:true, invandning:String(o.invandning||''), haller_med:o.haller_med===true, tillagg:String(o.tillagg||'')};
+}
+
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function statView(){
+  const ks=[...new Set(CARDS.map(c=>c.k))];
+  const tot=CARDS.reduce((a,c)=>a+st(c.id).lvl,0), max=CARDS.length*MAX;
+  let h=`<p style="margin:0 0 4px;font-family:'Fraunces',serif;font-size:19px">Du kan ${Math.round(tot/max*100)} procent av leken</p>
+  <p style="margin:0 0 18px;font-size:13px;color:#6A6558">Ett kort räknas som säkert efter fyra rätta svar i olika omgångar.</p>
+  <table><tr><th>Område</th><th style="width:34%">Hur säkert</th><th style="text-align:right">Rätt/fel</th></tr>`;
+  ks.forEach(k=>{
+    const cs=CARDS.filter(c=>c.k===k);
+    const l=cs.reduce((a,c)=>a+st(c.id).lvl,0)/(cs.length*MAX);
+    const r=cs.reduce((a,c)=>a+st(c.id).ratt,0), f=cs.reduce((a,c)=>a+st(c.id).fel,0);
+    h+=`<tr><td>${k}</td><td><div class="track"><div class="fill" style="width:${Math.round(l*100)}%"></div></div></td><td style="text-align:right" class="lvl">${r} / ${f}</td></tr>`;
+  });
+  h+=`</table><div class="row"><button class="act ghost" id="clr">Nollställ all statistik</button></div>`;
+  $('v-stat').innerHTML=h;
+  $('clr').onclick=()=>{stats={};phrasing={};streak=0;save();statView();regView();$('streak').textContent='0 i rad';};
+}
+
+function regView(){
+  const bad=CARDS.filter(c=>st(c.id).fel>0&&st(c.id).lvl<MAX);
+  bad.sort((a,b)=>st(b.id).fel-st(a.id).fel);
+  const medTillagg=CARDS.filter(c=>(st(c.id).tillagg||[]).length>0);
+  let h='';
+  if(medTillagg.length){
+    h+=`<p style="margin:0 0 4px;font-family:'Fraunces',serif;font-size:18px;color:var(--ochre)">Tillägg utöver anteckningarna</p>
+    <p style="margin:0 0 14px;font-size:13px;color:#6A6558">Här har rättaren invänt mot anteckningarna och den starkare modellen höll med. Det här står alltså INTE i anteckningarna — fråga din lärare innan du skriver det på ett prov.</p>`;
+    medTillagg.forEach(c=>{
+      h+=`<div class="reg" style="border-left:3px solid var(--ochre);padding-left:10px"><p class="rq">${esc(c.q)}</p><p class="ra">${esc(c.a)}</p>`;
+      st(c.id).tillagg.forEach(t=>{h+=`<p style="margin:6px 0 0;font-size:13px;color:var(--ochre)">+ ${esc(t)}</p>`;});
+      h+=`</div>`;
+    });
+    h+='<div style="height:22px"></div>';
+  }
+  if(!bad.length){
+    h+=`<div class="empty">Inga felsvarade frågor. De du svarar fel på hamnar här.</div>`;
+  }else{
+    h+=`<p style="margin:0 0 4px;font-family:'Fraunces',serif;font-size:18px">Att repetera</p>
+    <p style="margin:0 0 14px;font-size:13px;color:#6A6558">${bad.length} frågor. De kommer också oftare i övningen.</p>`;
+    bad.forEach(c=>{const s2=st(c.id);
+      h+=`<div class="reg"><p class="rq">${esc(c.q)}</p><p class="ra">${esc(c.a)}</p><p class="rn">Fel ${s2.fel} gånger · nivå ${s2.lvl} av ${MAX}</p></div>`;});
+  }
+  $('v-reg').innerHTML=h;
+}
+const views={ova:['t-ova','v-ova'],stat:['t-stat','v-stat'],reg:['t-reg','v-reg'],set:['t-set','v-set']};
+function show(n){
+  Object.keys(views).forEach(k=>{
+    const [t,v]=views[k];
+    $(t).setAttribute('aria-selected',k===n?'true':'false');
+    $(v).style.display=k===n?'block':'none';
+  });
+  if(n==='stat')statView();
+  if(n==='reg')regView();
+}
+$('t-ova').onclick=()=>show('ova');
+$('t-stat').onclick=()=>show('stat');
+$('t-reg').onclick=()=>show('reg');
+$('t-set').onclick=()=>show('set');
+function fillProv(){
+  const p=$('prov').value, cfg=PROV[p];
+  $('models').innerHTML=cfg.modeller.map(m=>'<option value="'+m+'">').join('');
+  $('model').value=localStorage.getItem('flod-model-'+p)||cfg.snabb||cfg.modeller[0];
+  $('model2').value=getModel2Raw(p);
+  $('key').value=(localStorage.getItem('flod-key-'+p)||'');
+  $('provhint').textContent=cfg.hint;
+  $('baseWrap').style.display=p==='custom'?'block':'none';
+  $('base').value=localStorage.getItem('flod-base')||'';
+  $('key').placeholder=p==='custom'?'Lämna tomt om din server inte kräver nyckel':'Klistra in nyckeln';
+  if(cfg.presets){
+    $('presetWrap').style.display='block';
+    $('preset').innerHTML='<option value="">Anpassat</option>'+cfg.presets.map((pr,i)=>'<option value="'+i+'">'+esc(pr.namn)+'</option>').join('');
+    $('preset').value='';
+  }else{
+    $('presetWrap').style.display='none';
+  }
+}
+$('preset')&&($('preset').onchange=()=>{
+  const p=$('prov').value, cfg=PROV[p], i=$('preset').value;
+  if(i===''||!cfg.presets)return;
+  const pr=cfg.presets[+i];
+  $('model').value=pr.snabb;
+  $('model2').value=pr.stark;
+});
+/* Adressen till keys.json på GitHub. Räknas ut från webbadressen när sidan
+   ligger på GitHub Pages, annars används värdena här. */
+const REPO={agare:'Aldur13',repo:'Flashcards',gren:'claude/website-launch-setup-u4g39j'};
+function repoRedigeraUrl(){
+  let agare=REPO.agare, repo=REPO.repo;
+  const h=location.hostname.toLowerCase();
+  if(h.endsWith('.github.io')){
+    agare=h.replace('.github.io','');
+    const del=location.pathname.split('/').filter(Boolean);
+    if(del.length&&!/\.html?$/i.test(del[0]))repo=del[0];
+    else repo=agare+'.github.io';
+  }
+  return 'https://github.com/'+agare+'/'+repo+'/edit/'+REPO.gren+'/'+POOLFIL;
+}
+
+function poolStatus(e){
+  const d=poolDoda()[e.id];
+  if(poolLevande(e.id))return e.id===poolStandard()?{txt:'Används nu',fa:'var(--malachite)'}:{txt:'Redo',fa:'#6A6558'};
+  if(d&&d.till&&Date.now()<d.till)return {txt:'Upptagen just nu',fa:'var(--ochre)'};
+  return {txt:'Slutade fungera '+((d&&d.tid||'').slice(0,10)),fa:'var(--clay)'};
+}
+function renderPool(){
+  const w=$('poolWrap');if(!w)return;
+  const lista=poolOrdning();
+  if(!lista.length){
+    $('poolList').innerHTML='<div class="empty">Inga delade nycklar ännu. Lägg till en nedan, eller använd en egen.</div>';
+    return;
+  }
+  $('poolList').innerHTML=lista.map(e=>{
+    const s2=poolStatus(e), fri=GRATIS.indexOf(e.prov)>=0;
+    return `<div class="reg">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <p class="rq">${esc(e.namn)}</p>
+        <span class="lvl" style="color:${s2.fa}">${esc(s2.txt)}</span>
+      </div>
+      <p class="ra">${esc(PROV[e.prov].namn)} · <span data-nyckel="${esc(e.id)}" style="font-family:ui-monospace,monospace">${esc(mask(e.key))}</span>
+        <button type="button" data-visa="${esc(e.id)}" style="background:none;border:0;padding:0 0 0 6px;color:var(--lapis);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline">visa</button></p>
+      ${fri?'':'<p class="rn">'+esc(PROV[e.prov].namn)+' kan kosta pengar. Lägg helst bara gratisnycklar i den delade listan.</p>'}
+    </div>`;
+  }).join('');
+  $('poolList').querySelectorAll('[data-visa]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.getAttribute('data-visa'), e=POOL.filter(x=>x.id===id)[0];
+      const f=$('poolList').querySelector('[data-nyckel="'+id+'"]');
+      if(!e||!f)return;
+      const dold=f.textContent.indexOf('•')>=0;
+      f.textContent=dold?e.key:mask(e.key);
+      b.textContent=dold?'dölj':'visa';
+    };
+  });
+}
+async function testaAlla(){
+  const b=$('testall');
+  b.disabled=true;b.textContent='Testar…';
+  for(const e of POOL.slice()){
+    try{
+      await api('Svara med ordet OK och inget annat.',null,e);
+      const m=poolDoda();if(m[e.id]){delete m[e.id];poolSkrivDoda(m);}
+      if(!poolStandard())poolSattStandard(e.id);
+    }catch(err){
+      const st=err.status;
+      if(st===429)poolDodMarkera(e.id,err.message,true);
+      else if(st===401||st===403||st===402||st===404)poolDodMarkera(e.id,err.message,false);
+    }
+    renderPool();
+  }
+  b.disabled=false;b.textContent='Testa alla';
+  const kvar=POOL.filter(e=>poolLevande(e.id)).length;
+  msg(kvar+' av '+POOL.length+' delade nycklar fungerar.',kvar>0);
+  $('logbox').textContent=logDump();
+}
+function npRad(){
+  const namn=$('np-namn').value.trim()||'Delad nyckel';
+  const prov=$('np-prov').value, key=$('np-key').value.trim();
+  return JSON.stringify({namn,prov,key},null,0);
+}
+function renderNy(){
+  const prov=$('np-prov').value, key=$('np-key').value.trim();
+  $('np-out').textContent=key?npRad()+',':'Fyll i nyckeln så visas raden här.';
+  const fri=GRATIS.indexOf(prov)>=0;
+  $('np-warn').style.display=fri?'none':'block';
+  if(!fri)$('np-warn').textContent=PROV[prov].namn+' kan kosta pengar, och alla som öppnar sidan kan läsa nyckeln. Lägg helst bara in en gratisnyckel utan betalkort.';
+}
+function renderSource(){
+  const has=harDelad(), src=getSource(), egen=(!has||src==='egen');
+  $('srcWrap').style.display=has?'block':'none';
+  $('poolWrap').style.display=(has&&src==='delad')?'block':'none';
+  $('src-delad').setAttribute('aria-selected',src==='delad'?'true':'false');
+  $('src-egen').setAttribute('aria-selected',src==='egen'?'true':'false');
+  $('egenWrap').style.display=egen?'block':'none';
+  $('savekey').style.display=egen?'':'none';
+  const a=poolAktiv();
+  $('srchint').textContent=src==='delad'
+    ? 'Du använder de delade nycklarna'+(a?' — just nu "'+a.namn+'"':'')+'. Du behöver inte göra något, börja bara öva.'
+    : 'Du använder din egen nyckel. Den sparas i den här webbläsaren och ligger kvar till nästa gång du kommer tillbaka.';
+  if(has)renderPool();
+}
+function mask(k){k=String(k);return k.length<=8?k.slice(0,2)+'••••':k.slice(0,4)+'••••••'+k.slice(-4);}
+function renderSaved(){
+  const rows=Object.keys(PROV).filter(p=>(localStorage.getItem('flod-key-'+p)||'').trim());
+  $('savedWrap').style.display=rows.length?'block':'none';
+  if(!rows.length){$('savedList').innerHTML='';return;}
+  $('savedList').innerHTML=rows.map(p=>{
+    const k=localStorage.getItem('flod-key-'+p).trim(), ts=localStorage.getItem('flod-keyts-'+p)||'', bad=keyBad(p);
+    return `<div class="reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div><p class="rq" style="font-size:15px">${esc(PROV[p].namn)}</p>
+      <p class="ra" style="font-family:ui-monospace,monospace">${esc(mask(k))}${ts?' · sparad '+esc(ts):''}</p>
+      ${bad?'<p class="rn">Fungerade inte senast den användes</p>':''}</div>
+      <button class="act ghost" type="button" data-del="${p}" style="flex:0 0 auto;padding:8px 12px;font-size:13px">Ta bort</button>
+    </div>`;
+  }).join('');
+  $('savedList').querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick=()=>{
+      const q=b.getAttribute('data-del');
+      localStorage.removeItem('flod-key-'+q);
+      localStorage.removeItem('flod-keyts-'+q);
+      localStorage.removeItem('flod-keybad-'+q);
+      if($('prov').value===q)$('key').value='';
+      renderSaved();renderKeyWarn();
+      msg('Nyckeln för '+PROV[q].namn+' togs bort.',true);
+    };
+  });
+}
+function getModel2Raw(p){const m=localStorage.getItem('flod-model2-'+p);return m===null?(PROV[p].stark||''):m;}
+function msg(t,ok){const m=$('setmsg');m.textContent=t;m.style.color=ok?'var(--malachite)':'var(--clay)';m.style.display='block';}
+function saveSettings(){
+  const p=$('prov').value;
+  localStorage.setItem('flod-prov',p);
+  const k=$('key').value.trim(), prev=(localStorage.getItem('flod-key-'+p)||'').trim();
+  if(k){
+    localStorage.setItem('flod-key-'+p,k);
+    if(k!==prev){
+      localStorage.setItem('flod-keyts-'+p,new Date().toISOString().slice(0,10));
+      setKeyBad(p,'');
+    }
+  }else{
+    localStorage.removeItem('flod-key-'+p);
+    localStorage.removeItem('flod-keyts-'+p);
+    localStorage.removeItem('flod-keybad-'+p);
+  }
+  localStorage.setItem('flod-model-'+p,$('model').value.trim()||PROV[p].snabb||PROV[p].modeller[0]);
+  localStorage.setItem('flod-model2-'+p,$('model2').value.trim());
+  if(p==='custom')localStorage.setItem('flod-base',$('base').value.trim());
+  renderSaved();renderKeyWarn();
+}
+function setupSettings(){
+  $('prov').value=egenProv();
+  fillProv();
+  renderSource();
+  renderSaved();
+  renderKeyWarn();
+  $('prov').onchange=()=>{fillProv();renderSaved();};
+  $('np-prov').innerHTML=Object.keys(PROV).filter(k=>k!=='custom').map(k=>'<option value="'+k+'">'+esc(PROV[k].namn)+'</option>').join('');
+  ['np-namn','np-prov','np-key'].forEach(id=>{$(id).oninput=renderNy;$(id).onchange=renderNy;});
+  renderNy();
+  $('testall').onclick=testaAlla;
+  $('np-copy').onclick=async()=>{
+    const t=npRad()+',';
+    try{ await navigator.clipboard.writeText(t); msg('Raden är kopierad. Klistra in den i keys.json bland de andra nycklarna.',true); }
+    catch(e){ msg('Kunde inte kopiera automatiskt — markera raden ovan och kopiera den för hand.',false); }
+  };
+  $('np-open').onclick=()=>window.open(repoRedigeraUrl(),'_blank','noopener');
+  $('src-delad').onclick=()=>{setSource('delad');renderSource();renderKeyWarn();};
+  $('src-egen').onclick=()=>{setSource('egen');renderSource();renderSaved();renderKeyWarn();};
+  $('tokey').onclick=()=>show('set');
+  // Spara direkt när fältet lämnas, så att en nyckel aldrig går förlorad för
+  // att man glömde trycka på Spara.
+  ['key','model','model2','base'].forEach(id=>{$(id).onchange=()=>saveSettings();});
+  $('savekey').onclick=()=>{saveSettings();msg('Sparat. Nyckeln finns kvar nästa gång du öppnar sidan.',true);setTimeout(()=>{$('setmsg').style.display='none';},2600);};
+  $('testkey').onclick=async()=>{
+    if(getSource()==='egen')saveSettings();
+    $('testkey').disabled=true;$('testkey').textContent='Testar…';
+    try{
+      const t=await api('Svara med ordet OK och inget annat.');
+      msg('Fungerar. '+PROV[getProv()].namn+' svarade: '+t.slice(0,40),true);
+    }catch(e){ msg(e.message||'Något gick fel.',false); }
+    renderSaved();renderKeyWarn();
+    $('testkey').disabled=false;$('testkey').textContent='Testa';
+    $('logbox').textContent=logDump();
+  };
+  $('showlog').onclick=()=>{
+    const box=$('logbox');
+    if(box.style.display==='none'){box.textContent=logDump();box.style.display='block';$('showlog').textContent='Dölj logg';}
+    else{box.style.display='none';$('showlog').textContent='Visa logg';}
+  };
+}
+
+/* Körs när keys.json har hämtats — först då vet vi om det finns någon delad
+   nyckel, och därmed om eleven behöver ombes lägga in en egen. */
+function poolKlar(){
+  renderSource();renderKeyWarn();
+  if(harDelad())renderPool();
+  if(!harDelad()&&!getKey()&&getProv()!=='custom')show('set');
+}
+$('check').onclick=check;
+$('skip').onclick=()=>{audio();nextCard();};
+$('cat').onclick=visaAmnesval;
+$('ans').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))check();});
+load();nextCard();setupSettings();
+/* Första besöket: låt eleven välja områden innan första frågan. */
+if(!harValtAmnen())visaAmnesval();
+laddaPool().then(poolKlar);
+</script>
+
+</body>
 </html>
