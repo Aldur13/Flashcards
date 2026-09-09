@@ -45,6 +45,13 @@ button.ghost{background:transparent;color:#5C5749;border:1px solid #C9C3B2}
 .vt{font-family:'Fraunces',serif;font-size:17px;margin:0 0 5px}
 .facit{margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.12);font-size:14px;color:#4A4638}
 .facit b{font-weight:500;display:block;font-size:12px;color:#8A836F;margin-bottom:3px}
+  .appeal{margin-top:14px;background:var(--lime-2);border-radius:10px;padding:14px}
+  .appeal .ovt{font-family:'Fraunces',serif;font-size:16px;margin:0 0 4px}
+  .appeal .ovh{font-size:12px;color:#6A6558;margin:0 0 10px;line-height:1.45}
+  .appeal textarea{min-height:78px;font-size:15px}
+  .dom{margin-top:14px;border-radius:10px;padding:14px 15px;font-size:15px;background:var(--lime-2);border-left:4px solid var(--lapis)}
+  .dom .vt{font-family:'Fraunces',serif;font-size:16px;margin:0 0 5px}
+  .dom .dm{font-size:12px;color:#6A6558;margin:8px 0 0}
 table{width:100%;border-collapse:collapse;font-size:14px}
 td,th{text-align:left;padding:9px 0;border-bottom:1px solid #D8D2C0;vertical-align:middle}
 th{font-weight:500;font-size:12px;color:#8A836F}
@@ -197,7 +204,7 @@ const CARDS=[
 {id:3,k:"Jordbruksrevolutionen",q:"Vilka blev konsekvenserna av jordbruksrevolutionen?",a:"Befolkningsökning. Bofasta byar som utvecklades till städer. Specialisering av yrken, till exempel hantverkare. Teknikutveckling som brons. Handel utvecklas, varor byts mellan olika områden."},
 {id:4,k:"Jordbruksrevolutionen",q:"Vad är brons och varför var det viktigt?",a:"Brons är tenn och koppar. Det gav bättre redskap och vapen."},
 {id:5,k:"Högkulturer",q:"Vad kännetecknar de första högkulturerna, för cirka 5000 år sedan?",a:"Utvecklad handel och hantverk. Centralmakt som styr ett område, till exempel en kung. Skrivtecken. Oftast en gemensam religion."},
-{id:6,k:"Högkulturer",q:"Vid vilka floder uppstod de första högkulturerna?",a:"Eufrat och Tigris (dagens Irak), Nilen, Indus och Huang He, Gula floden."},
+{id:6,k:"Högkulturer",q:"Vid vilka floder uppstod de första högkulturerna?",a:"Fem floder: Eufrat och Tigris (dagens Irak), Nilen, Indus samt Huang He, som också kallas Gula floden."},
 {id:7,k:"Högkulturer",q:"Varför uppstod högkulturerna just vid floder?",a:"Transport, bevattning, försvar och föda."},
 {id:8,k:"Högkulturer",q:"Vad var den bördiga halvmånen?",a:"Ett bördigt område från Egypten till Eufrat och Tigris. Det var ofta ett mål för antikens erövrare. Idag är det betydligt torrare."},
 {id:9,k:"Sumererna",q:"Vad betyder Mesopotamien och var ligger det?",a:"Tvåflodslandet. Det ligger i dagens Irak."},
@@ -233,7 +240,63 @@ const CARDS=[
 {id:39,k:"Faraoner",q:"Vad är Ramses II känd för?",a:"Cirka 1200 f.Kr. Han var det forntida Egyptens största erövrare och gjorde Egypten till en stormakt. Han lät bygga många skrytbyggen över sig själv. Bibelns Moses lär ha levt under hans regeringstid."},
 {id:40,k:"Faraoner",q:"Vad är Tutankhamon känd för?",a:"Cirka 1300 f.Kr. Han dog vid endast 18 års ålder och var betydelselös för historien. Han är känd för att hans grav var den enda icke plundrade i Konungarnas dal. Howard Carter fann den orörd 1922."},
 {id:41,k:"Egypten",q:"Varför är Rosettastenen en viktig upptäckt?",a:"Kunskapen om att läsa och tyda hieroglyfer hade försvunnit sedan länge. 1799 hittade franska soldater stenen under ett krig i Egypten. På stenen fanns samma text på tre olika språk, varav ett var gammalgrekiska. Det låg till grund för tolkningen av hieroglyferna."},
-{id:42,k:"Egypten",q:"Nämn två berömda egyptiska byggnader.",a:"Cheopspyramiden, som är den högsta, och Karnak, tempelstaden."}
+{id:42,k:"Egypten",q:"Nämn två berömda egyptiska byggnader.",a:"Cheopspyramiden, som är den högsta, och Karnak, tempelstaden."},
+{id:43,k:"Historiska begrepp",q:"Vad menas med ett folk?",a:"En stor grupp människor som upplever att de har något gemensamt: att de bor på samma ställe, talar samma språk, har samma religion eller historia, eller lever på ett likartat sätt."},
+{id:44,k:"Historiska begrepp",q:"Vad betyder ordet kultur?",a:"Ordet betyder egentligen odling, från att människan lärde sig odla jorden. Men begreppet betyder också människors sätt att leva."},
+{id:45,k:"Historiska begrepp",q:"Vad är ett nomadsamhälle?",a:"Ett samhälle där människorna aldrig är bofasta utan flyttar mellan olika platser. Nomader är antingen jägare eller boskapsskötare. Idag är det ovanligt, men i forntiden levde nästan alla människor som nomader."},
+{id:46,k:"Historiska begrepp",q:"Vad består en stadsstat av, och finns det några idag?",a:"En stad och landsbygden runt omkring, med egna ledare och lagar. De grekiska stadsstaterna är exempel. San Marino och Singapore är två nutida exempel."},
+{id:47,k:"Historiska begrepp",q:"Vad menas med land, rike eller stat?",a:"Ett stort område där människor lever under ungefär samma lagar. De flesta stater i dagens värld är sådana."},
+{id:48,k:"Historiska begrepp",q:"Vad är ett imperium? Ge exempel.",a:"Ett jättelikt landområde som ofta erövrats genom krig. Assyrien, perserriket och romarriket är exempel. Ordet imperialism uppstod på 1800-talet."},
+{id:49,k:"Historiska begrepp",q:"Vad menas med civilisation eller högkultur?",a:"Ett samhälle med avancerade kunskaper, till exempel skriftspråk, matematik eller förmågan att bygga stora hus. Ofta finns också olika yrken och makten samlad i en huvudstad. Egypten är en av världens allra första högkulturer."},
+{id:50,k:"Historiska begrepp",q:"Vilken tidsperiod menas med antiken, och vad betyder ordet?",a:"Ungefär 500 f.Kr. till 500 e.Kr. Antik betyder gammal eller gammaldags, och som tidsbegrepp menas den äldsta grekiska och romerska historien."},
+{id:51,k:"Historiska begrepp",q:"Vilka tidsbegrepp delas historien in i efter forntiden?",a:"Antiken, medeltiden, renässansen, tidigmodern tid (nya tiden) och modern tid."},
+{id:52,k:"Historiska begrepp",q:"Varför fick medeltiden sitt namn, och vem lanserade begreppet renässansen?",a:"Historiker på 1700- och 1800-talen såg antiken som ljus och god, och medeltiden som en mörk mellantid mellan antiken och renässansen. Den schweiziske kulturhistorikern Jacob Burckhardt lanserade begreppet renässansen på 1800-talet."},
+{id:53,k:"Historiska begrepp",q:"Varför menar många historiker idag att bilden av medeltiden som mörk inte stämmer?",a:"Under medeltiden gjordes stora framsteg, till exempel i jordbruksekonomin, och dagens europeiska städer och stater grundades då. Antiken var samtidigt full av slaveri och krig. Bilden beror ofta på ur vems perspektiv verkligheten ses."},
+{id:54,k:"Historiska begrepp",q:"Vad var pax romana?",a:"Den romerska fredens tid, perioden efter den romerske kejsaren Augustus."},
+{id:55,k:"Antikens världar",q:"Vad menar forskare idag om var antikens kultur kom ifrån?",a:"Att kulturer utvecklas genom kulturmöten med andra folk, snarare än genom kulturarv. Greker och romare startade alltså inte kulturen i Europa, utan den växte fram genom möten med många andra folk runt Medelhavet."},
+{id:56,k:"Antikens världar",q:"Varför reste människor runt Medelhavet under antiken?",a:"För att köpa och sälja varor, för att hitta bättre platser att bo på, och ibland i krigståg. Kontakterna spred idéer och gjorde att nya städer och riken uppstod."},
+{id:57,k:"Antikens världar",q:"Varför uppstod de första städerna och rikena just runt Medelhavet?",a:"Jordarna var bördiga och lätta att odla, och där uppstod världens allra första jordbruk. De stora skördarna gjorde människorna rikare, så att alla inte behövde skaffa fram mat. Några kunde specialisera sig på handel och hantverk istället."},
+{id:58,k:"Egypten",q:"Vad ledde jordbrukets överskott till i Egypten?",a:"Nya yrken uppstod: präster, skrivare, hantverkare, köpmän, militärer och arkitekter. Överskottet räckte också till en omfattande handel med andra folk runt Medelhavet."},
+{id:59,k:"Egypten",q:"Varför var kalendern så viktig i Egypten?",a:"Man måste veta i förväg när nästa översvämning skulle komma, för att hinna gräva nya kanaler och laga de gamla i tid. Prästerna skötte kalendern. När stjärnan Sirius blev synlig på natthimlen var det dags, och ett par veckor senare började floden stiga."},
+{id:60,k:"Egypten",q:"Vad var Livets hus?",a:"De egyptiska templens kunskaper, som var en del av deras makt. Templen hade också som viktig funktion att förvara överskottet från goda skördeår, så att befolkningen inte skulle svälta vid en dålig skörd."},
+{id:61,k:"Egypten",q:"Hur mäktiga var de egyptiska templen?",a:"Över 80 000 bönder arbetade på mark som tillhörde templen. Templet i Thebe ägde över 400 000 djur och egna båtar, och hade egna skrivare som höll reda på vad bönderna var skyldiga att lämna av sina skördar."},
+{id:62,k:"Egypten",q:"Vad är papyrus?",a:"Ett slags papper som tillverkades av en gräsväxt som växer i Nildalen. Det var det egyptierna skrev på."},
+{id:63,k:"Egypten",q:"Vilka tre storhetsperioder brukar egyptologer tala om?",a:"Gamla riket, cirka 2700–2270 f.Kr. Mellersta riket, cirka 2040–1675 f.Kr. Nya riket, cirka 1575–1087 f.Kr."},
+{id:64,k:"Egypten",q:"Vad kännetecknar Gamla, Mellersta och Nya riket?",a:"Gamla riket: pyramiderna, i norra Egypten. Mellersta riket: Thebe som ny huvudstad, i mellersta Egypten. Nya riket: Abu Simbel-templet, i södra Egypten."},
+{id:65,k:"Egypten",q:"Vad är en egyptolog?",a:"En expert på Egyptens äldre historia."},
+{id:66,k:"Egypten",q:"Vad hände med Egypten efter Nya rikets slut?",a:"Egypten kom i tätare kontakt med de andra kulturerna runt Medelhavet, blev erövrat av andra stormakter och kontrollerades till slut av de romerska kejsarna."},
+{id:67,k:"Egypten",q:"När kunde man börja läsa hieroglyfer igen, och varför då?",a:"Kunskapen glömdes bort under antiken. Först på 1800-talet lyckades språkforskare tyda hieroglyferna, i samband med det ökande intresset för antiken. Arkeologiska utgrävningar på 1900-talet har också gett ny kunskap."},
+{id:68,k:"Egypten",q:"Vilka byggde de största pyramiderna, och hur såg de troligen på arbetet?",a:"Troligen frivilliga byggnadsarbetare, inte slavar. Många forskare menar att de flesta antagligen uppfattade det slitsamma arbetet som ett slags helig, religiös handling. Man räknar med att över 200 000 egyptier deltog i arbetet."},
+{id:69,k:"Sumererna",q:"Varifrån kom sumererna och var bosatte de sig?",a:"Det sumeriska folket invandrade för omkring 6000 år sedan till det träskiga och fuktiga området där Eufrat och Tigris flyter ut i Persiska viken."},
+{id:70,k:"Sumererna",q:"Hur kunde världens första städer uppstå i Sumer?",a:"Sumererna lyckades odla upp området med hjälp av nya former av sädesslag som gav stora skördar. Fler människor kunde födas av maten, och så småningom uppstod världens första städer."},
+{id:71,k:"Sumererna",q:"Varför började prästerna i Mesopotamien använda skrift?",a:"Ingen ägde sin egen jord, utan alla hyrde jorden av templen. För att hålla reda på vad var och en skulle betala i hyra började prästerna föra räkenskaper."},
+{id:72,k:"Sumererna",q:"Vad är kilskrift och vad skrevs den på?",a:"Skrivtecken som trycktes in i tavlor av lera, som sedan torkades. Istället för papyrus, som man använde i Egypten."},
+{id:73,k:"Babylonien och Assyrien",q:"Vad hände omkring 2000 f.Kr. i Mesopotamien?",a:"De sumeriska städerna anfölls av ett annat folk, det babyloniska. Babylonierna tog över de sumeriska städerna men byggde också en ny huvudstad, Babylon."},
+{id:74,k:"Babylonien och Assyrien",q:"Hur var Hammurabis lagar samlade och bevarade?",a:"En samling av 282 lagar, nedtecknade på en stor sten som förvarades i kungapalatset."},
+{id:75,k:"Babylonien och Assyrien",q:"Vad var tanken bakom Hammurabis lagar?",a:"Straffet skulle bli lika stort som den skada brottslingen orsakat, varken mer eller mindre. Hade man slagit ut en tand fick man en egen tand utslagen. Vissa lagar gick så långt att barnen kunde drabbas för något deras föräldrar gjort."},
+{id:76,k:"Babylonien och Assyrien",q:"Vad säger Hammurabis lagar paragraf 229 och 230?",a:"Paragraf 229: om en byggmästare inte bygger huset ordentligt och huset rasar ihop och dödar husägaren, ska byggmästaren dödas. Paragraf 230: om det rasade huset dödar husägarens son, ska byggmästarens son dödas."},
+{id:77,k:"Babylonien och Assyrien",q:"Hur delade babylonierna in dygnet och cirkeln, och varför?",a:"Talet 12 var heligt för att det är delbart med mycket. Dagen fick 12 timmar och natten 12 timmar, timmen 60 minuter, och cirkeln 360 grader. Vi använder det fortfarande."},
+{id:78,k:"Babylonien och Assyrien",q:"Varför räknas talet 13 som ett olyckstal?",a:"Det kommer från babylonierna. I deras lagtabeller ströks talet 13. Ett exempel är Hammurabis lagtavla, där skrivaren gick direkt från lag nummer 12 till lag nummer 14."},
+{id:79,k:"Babylonien och Assyrien",q:"Vad är Ishtarporten?",a:"En av Babylons stora portar, täckt av bågformade och blåglaserade tegel. Djuren på porten symboliserade olika egenskaper hos Ishtar, kärlekens och krigets gudinna. Idag finns en rekonstruktion på ett museum i Berlin."},
+{id:80,k:"Babylonien och Assyrien",q:"Hur stor var staden Babylon?",a:"En av antikens allra största städer, med flera hundra tusen invånare."},
+{id:81,k:"Babylonien och Assyrien",q:"Från vilken stad kom assyriernas kungar, och när erövrade de Babylonien?",a:"Från staden Assur, längre norrut i Mesopotamien. Deras kungar erövrade område efter område under 1300-talet f.Kr. och krossade babyloniernas rike."},
+{id:82,k:"Babylonien och Assyrien",q:"Vilket nytt vapen gav assyrierna framgång i krig?",a:"Hästdragna stridsvagnar med två soldater: den ene körde vagnen och den andre var spjutkastare."},
+{id:83,k:"Babylonien och Assyrien",q:"Vad erövrade assyrierna utanför Mesopotamien?",a:"De krossade det judiska Nordriket och härskade en tid även över Egypten. Efter det hade de skapat ett av världens första imperier."},
+{id:84,k:"Babylonien och Assyrien",q:"Vad gjorde nybabylonierna med Jerusalem?",a:"De lät riva templet i Jerusalem och förde de ledande judarna i staden i fångenskap till Babylon."},
+{id:85,k:"Fenicierna",q:"Vilka var fenicierna och var bodde de?",a:"Ett folkslag som byggde städer runt hela Medelhavet, framför allt på den östra kusten i dagens Libanon. De var kända för sitt skeppsbyggeri, sin handel och sin sjöfart."},
+{id:86,k:"Fenicierna",q:"Vilken stad grundade fenicierna i Nordafrika?",a:"Karthago, den största feniciska stadsstaten."},
+{id:87,k:"Fenicierna",q:"Vad var feniciernas språk släkt med?",a:"Det var ett semitiskt språk, släkt med dagens hebreiska och arabiska."},
+{id:88,k:"Fenicierna",q:"Varifrån kommer orden bibel och bibliotek?",a:"Från den feniciska staden Byblos, där man bytte papyrus från Egypten mot cederträ från de libanesiska skogarna. Feniciska köpmän sålde papyrusen vidare, och i Grekland började man kalla papyrus för byblos. Därav orden bibel och bibliotek."},
+{id:89,k:"Fenicierna",q:"Vad är feniciernas viktigaste kulturarv?",a:"Alfabetet. Vårt nuvarande alfabet bygger på det feniciska, som grekerna lärde sig av fenicierna. Det var i Egypten fenicierna själva lärde sig konsten att använda skrivtecken."},
+{id:90,k:"Fenicierna",q:"Vad heter staden Byblos idag?",a:"Jubayl, som fortfarande är en livlig hamnstad i Libanon."},
+{id:91,k:"Judarna",q:"Var bodde det judiska folket, och hur försörjde de sig?",a:"På jordbruksfälten sydväst om feniciernas städer, upp mot bergen. Många av judarna var jordbrukare, medan andra ägnade sig åt boskapsuppfödning."},
+{id:92,k:"Judarna",q:"I vilka två riken var det judiska folket uppdelat?",a:"Israel, som var Nordriket, och Juda, som var Sydriket."},
+{id:93,k:"Judarna",q:"Vilken stad var judarnas huvudstad, och var låg den?",a:"Jerusalem, som låg högst upp på en bergskam i Juda. Den blev en av antikens mest omtalade städer."},
+{id:94,k:"Judarna",q:"Varför var Jerusalem så viktigt för judarna?",a:"Man vallfärdade dit för att besöka templet och offra till Gud, framför allt under de stora helgerna som påsk. Dit kom också många judar och andra folk för att köpa och sälja varor."},
+{id:95,k:"Judarna",q:"Vad var speciellt med judarnas religion?",a:"Judarna trodde att det bara fanns en enda gud. Det väckte förvåning hos andra folk, som var vana att dyrka många olika gudar samtidigt."},
+{id:96,k:"Judarna",q:"Vilka riken anföll de judiska rikena?",a:"Assyrier, babylonier och romare anföll under olika perioder. Området och templet i Jerusalem förstördes vid två tillfällen, senast av romarna. Idag återstår endast västra muren av det sista templet."},
+{id:97,k:"Judarna",q:"Vad är Tanakh?",a:"Judarnas äldsta historia och samtidigt en helig, religiös skrift. Den innehåller samma texter som Gamla testamentet i Bibeln, och är därför svår att tolka historiskt."},
+{id:98,k:"Judarna",q:"När byggdes det första templet i Jerusalem, och vad hände med det?",a:"Under kung Salomos tid på 900-talet f.Kr. enligt Bibelns texter. Det förstördes 400 år senare, då många av judarna fördes bort i fångenskap till Babylonien."}
 ];
 const MAX=4, KEY='flodkulturer-v1';
 const STRICT=[
@@ -250,6 +313,9 @@ const OMSKRIV=[
  'Gör frågan mer utmanande, till exempel som en jämförelse, en varför-fråga eller ett kort resonemang. Den ska fortfarande gå att besvara med hjälp av facit.'
 ];
 let stats={}, cur=null, prevId=null, busy=false, streak=0, phrasing={};
+/* Senaste rättningen, så att en överklagan kan pröva den på nytt och räkna om
+   statistiken från hur den såg ut innan. */
+let sistaRattning=null;
 
 const $=id=>document.getElementById(id);
 const st=id=>stats[id]||(stats[id]={lvl:0,ratt:0,fel:0,senast:''});
@@ -263,7 +329,7 @@ function save(){
 const PROV={
  groq:{namn:'Groq',url:'https://api.groq.com/openai/v1/chat/completions',shape:'openai',
    modeller:['openai/gpt-oss-20b','openai/gpt-oss-120b','qwen/qwen3.6-27b'],
-   snabb:'openai/gpt-oss-20b', stark:'openai/gpt-oss-120b',
+   snabb:'openai/gpt-oss-20b', stark:'openai/gpt-oss-120b', starkast:'openai/gpt-oss-120b',
    hint:'Helt gratis, snabbast av alla. Skaffa nyckel på console.groq.com med bara en e-post, inget kort. Äldre modeller som llama-3.3-70b-versatile och alla Kimi/DeepSeek-varianter är avvecklade av Groq och visas därför inte.',
    presets:[
      {namn:'Snabbast (ingen eskalering)', snabb:'openai/gpt-oss-20b', stark:''},
@@ -272,34 +338,34 @@ const PROV={
    ]},
  gemini:{namn:'Gemini',url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',shape:'openai',
    modeller:['gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-pro'],
-   snabb:'gemini-2.5-flash', stark:'gemini-2.5-pro',
+   snabb:'gemini-2.5-flash', stark:'gemini-2.5-pro', starkast:'gemini-2.5-pro',
    hint:'Helt gratis. Skaffa nyckel på aistudio.google.com med ett Google-konto, inget betalkort behövs.'},
  openrouter:{namn:'OpenRouter',url:'https://openrouter.ai/api/v1/chat/completions',shape:'openai',
    modeller:['meta-llama/llama-3.3-70b-instruct:free','openai/gpt-4o-mini','google/gemini-2.0-flash-001','anthropic/claude-sonnet-4.5'],
-   snabb:'meta-llama/llama-3.3-70b-instruct:free', stark:'openai/gpt-4o-mini',
+   snabb:'meta-llama/llama-3.3-70b-instruct:free', stark:'openai/gpt-4o-mini', starkast:'anthropic/claude-sonnet-4.5',
    hint:'En nyckel som når många tjänster. Modeller som slutar på :free kostar inget men har lägre hastighetsgräns.'},
  kimi:{namn:'Kimi',url:'https://api.moonshot.ai/v1/chat/completions',shape:'openai',
    modeller:['kimi-k2.6','kimi-k3','kimi-k2.7-code'],
-   snabb:'kimi-k2.6', stark:'kimi-k3',
+   snabb:'kimi-k2.6', stark:'kimi-k3', starkast:'kimi-k3',
    hint:'Nyckel från platform.moonshot.ai. Kontot behöver minst 1 dollar laddat innan nyckeln fungerar.'},
  anthropic:{namn:'Anthropic',url:'https://api.anthropic.com/v1/messages',shape:'anthropic',
    modeller:['claude-haiku-4-5-20251001','claude-sonnet-5','claude-opus-5'],
-   snabb:'claude-haiku-4-5-20251001', stark:'claude-sonnet-5',
+   snabb:'claude-haiku-4-5-20251001', stark:'claude-sonnet-5', starkast:'claude-opus-5',
    hint:'Nyckel från console.anthropic.com. Haiku rättar snabbt, Sonnet tar över vid osäkra svar.'},
  openai:{namn:'OpenAI',url:'https://api.openai.com/v1/chat/completions',shape:'openai',
    modeller:['gpt-4o-mini','gpt-4o','gpt-4.1-mini'],
-   snabb:'gpt-4o-mini', stark:'gpt-4o',
+   snabb:'gpt-4o-mini', stark:'gpt-4o', starkast:'gpt-4o',
    hint:'Nyckel från platform.openai.com.'},
  mistral:{namn:'Mistral',url:'https://api.mistral.ai/v1/chat/completions',shape:'openai',
    modeller:['mistral-small-latest','mistral-large-latest','open-mistral-nemo'],
-   snabb:'mistral-small-latest', stark:'mistral-large-latest',
+   snabb:'mistral-small-latest', stark:'mistral-large-latest', starkast:'mistral-large-latest',
    hint:'Nyckel från console.mistral.ai. Har en gratis nivå med begränsad hastighet.'},
  hf:{namn:'Hugging Face',url:'https://router.huggingface.co/v1/chat/completions',shape:'openai',
    modeller:['mistralai/Mistral-Small-24B-Instruct-2501','meta-llama/Llama-3.3-70B-Instruct','Qwen/Qwen2.5-72B-Instruct'],
-   snabb:'mistralai/Mistral-Small-24B-Instruct-2501', stark:'meta-llama/Llama-3.3-70B-Instruct',
+   snabb:'mistralai/Mistral-Small-24B-Instruct-2501', stark:'meta-llama/Llama-3.3-70B-Instruct', starkast:'Qwen/Qwen2.5-72B-Instruct',
    hint:'Token från huggingface.co/settings/tokens, med behörigheten "Make calls to Inference Providers".'},
  custom:{namn:'Egen adress',url:'',shape:'openai',modeller:['llama3.2','qwen2.5'],
-   snabb:'llama3.2', stark:'',
+   snabb:'llama3.2', stark:'', starkast:'',
    hint:'För en modell du kör själv. Kör Ollama med OLLAMA_ORIGINS=* så webbläsaren släpps in.'}
 };
 /* ── DELADE NYCKLAR ──────────────────────────────────────────────────────────
@@ -419,6 +485,9 @@ function getModel2(){
   const m=localStorage.getItem('flod-model2-'+p);return m===null?(PROV[p].stark||''):m.trim();
 }
 function getUrl(){const p=getProv();return p==='custom'?(localStorage.getItem('flod-base')||'').trim():PROV[p].url;}
+/* Den kraftfullaste modellen en tjänst har. Används när en överklagan ska prövas —
+   då är det värt att vänta några sekunder extra på ett bättre omdöme. */
+function modelStarkast(p){const c=PROV[p]||{};return c.starkast||c.stark||c.snabb||(c.modeller&&c.modeller[0])||'';}
 
 /* Nycklar som visat sig sluta fungera flaggas per tjänst, så att eleven får
    veta det på övningsfliken istället för att bara se ett kryptiskt felmeddelande. */
@@ -491,7 +560,7 @@ function render(){
   $('check').disabled=false;$('check').textContent='Rätta svaret';
 }
 
-function nextCard(){prevId=cur?cur.id:null;cur=pick();render();}
+function nextCard(){prevId=cur?cur.id:null;sistaRattning=null;cur=pick();render();}
 
 async function api(prompt,modelOverride,entry){
   const delad=!!entry;
@@ -544,14 +613,14 @@ async function api(prompt,modelOverride,entry){
 
 /* Går igenom de delade nycklarna i tur och ordning. Blir en nyckel avvisad
    hoppar vi vidare till nästa, och den som svarar blir standard från och med då. */
-async function apiPool(prompt,model){
+async function apiPool(prompt,model,starkast){
   const ordning=poolOrdning();
   if(!ordning.length)throw new Error('Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
   let sist=null;
   for(let i=0;i<ordning.length;i++){
     const e=ordning[i];
     try{
-      const t=await api(prompt,(model&&i===0)?model:null,e);
+      const t=await api(prompt,starkast?modelStarkast(e.prov):((model&&i===0)?model:null),e);
       poolSattStandard(e.id);
       return t;
     }catch(err){
@@ -566,17 +635,23 @@ async function apiPool(prompt,model){
 }
 
 let delatFallback=false;
-async function callAI(prompt,model){
-  if(getSource()==='delad')return apiPool(prompt,model);
+async function callAI(prompt,model,starkast){
+  if(getSource()==='delad')return apiPool(prompt,model,starkast);
   try{ return await api(prompt,model); }
   catch(e){
     if(e&&e.nyckelfel&&harDelad()){
-      const t=await apiPool(prompt,null);
+      const t=await apiPool(prompt,null,starkast);
       delatFallback=true;
       return t;
     }
     throw e;
   }
+}
+
+/* Anropar den starkaste modell som finns att tillgå, oavsett vilken som annars rättar. */
+async function callStark(prompt){
+  const m=getSource()==='delad'?null:modelStarkast(getProv());
+  return callAI(prompt,m,true);
 }
 
 async function rephrase(c,lvl){
@@ -601,6 +676,11 @@ FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa 
 
 Rätta så här:
 - Stavning, ordföljd och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
+- TVÅ NAMN PÅ SAMMA SAK ÄR SAMMA SAK. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Cheopspyramiden och Khufus pyramid samma byggnad, Mesopotamien och Tvåflodslandet samma område. Kräv ALDRIG att eleven skriver båda namnen, och skriv aldrig att det andra namnet saknas.
+- Står två namn på samma sak i facit, ofta efter ett komma eller inom parentes, är det EN sak i uppräkningen — inte två. Räkna antalet saker i facit rätt innan du bedömer om eleven missat något.
+- Svenska, engelska eller det ursprungliga namnet duger lika bra: Eufrat och Euphrates, Nilen och Nile, Gula floden och Yellow River.
+- Ungefärliga årtal räcker. Ligger eleven inom ett par hundra år, eller skriver århundradet istället för årtalet, är det rätt.
+- Skriver eleven något korrekt som inte står i facit är det aldrig fel. Bara ett felaktigt sakpåstående drar ner betyget.
 - ${STRICT[lvl].regel}
 - Bedöm bara det som frågan faktiskt frågar efter. Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för att eleven missat något som hör till en annan fråga.
 - Skriv aldrig att något saknas om det inte står i facit.
@@ -648,6 +728,7 @@ Svara ENDAST med ett JSON-objekt, ingen annan text och inga kodblock:
     $('err').style.display='block';$('check').disabled=false;return;
   }
   const s=st(cur.id);
+  const fore={lvl:s.lvl,ratt:s.ratt,fel:s.fel};
   s.senast=new Date().toISOString().slice(0,10);
   if(tillagg){
     s.tillagg=s.tillagg||[];
@@ -671,9 +752,128 @@ Svara ENDAST med ett JSON-objekt, ingen annan text och inga kodblock:
     <div class="facit"><b>Facit ur anteckningarna</b>${esc(cur.a)}</div>
     ${tillagg?`<div class="facit" style="border-top:1px solid var(--ochre)"><b style="color:var(--ochre)">Tillägg utöver anteckningarna</b>${esc(tillagg)}<br><span style="font-size:11px;color:#8A836F">Sparat i registret. Detta står inte i anteckningarna.</span></div>`:''}
   </div>
+  <div id="ovWrap"></div>
   <div class="row"><button class="act" id="nx">Nästa fråga</button></div>`;
   $('nx').onclick=()=>{audio();nextCard();$('ans').focus();};
+  sistaRattning={id:cur.id, kort:cur, shown, svar:v, lvl, fore, verdict:o.verdict, feedback:o.feedback||'', saknas:o.saknas||'', provad:false};
+  renderOverklaga();
   save();
+}
+
+/* ── ÖVERKLAGAN ──────────────────────────────────────────────────────────────
+   Tycker eleven att rättningen blev fel går det att skriva en kort motivering.
+   Den prövas av den starkaste modell som finns att tillgå, som ser frågan,
+   facit, elevens svar, den första rättningens dom och elevens argument — och
+   avgör sakligt. Går domen elevens väg räknas statistiken om från hur den såg
+   ut innan rättningen, så att ett felaktigt minus inte blir kvar.            */
+function renderOverklaga(){
+  const w=$('ovWrap'); if(!w||!sistaRattning) return;
+  if(sistaRattning.verdict==='ratt'||sistaRattning.provad){w.innerHTML='';return;}
+  w.innerHTML='<button class="act ghost" id="ovStart" style="width:100%;margin-top:12px">Överklaga rättningen</button>';
+  $('ovStart').onclick=oppnaOverklagan;
+}
+
+function oppnaOverklagan(){
+  audio();
+  const w=$('ovWrap');
+  w.innerHTML=`<div class="appeal">
+    <p class="ovt">Överklaga</p>
+    <p class="ovh">Skriv kort varför du tycker att rättningen blev fel. Den starkaste modellen läser frågan, facit, ditt svar och din motivering och avgör sakligt — den ger dig inte rätt bara för att du ber om det.</p>
+    <textarea id="ovText" placeholder="Till exempel: Huang He och Gula floden är samma flod, så jag räknade upp alla fem."></textarea>
+    <div id="ovErr" class="err" style="display:none"></div>
+    <div class="row"><button class="act ghost" id="ovAvbryt">Avbryt</button><button class="act" id="ovSkicka">Skicka överklagan</button></div>
+  </div>`;
+  $('ovAvbryt').onclick=()=>{audio();renderOverklaga();};
+  $('ovSkicka').onclick=provaOverklagan;
+  $('ovText').focus();
+}
+
+async function provaOverklagan(){
+  if(busy||!sistaRattning)return;
+  const mot=$('ovText').value.trim();
+  if(mot.length<3){$('ovErr').textContent='Skriv en kort motivering först.';$('ovErr').style.display='block';return;}
+  $('ovErr').style.display='none';
+  busy=true;$('ovSkicka').disabled=true;$('ovAvbryt').disabled=true;$('ovSkicka').textContent='Prövar…';
+  const r=sistaRattning;
+  const domar={ratt:'rätt',nastan:'nästan rätt',fel:'fel'}[r.verdict]||r.verdict;
+  const prompt=`Du är överdomare vid ett läxförhör i historia för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
+
+FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven förhörs på, så de är auktoriteten du bedömer mot.
+
+Fråga: ${r.shown}
+Facit ur anteckningarna: ${r.kort.a}
+Elevens svar: ${r.svar}
+Första rättningens dom: ${domar}
+Första rättningens motivering: ${r.feedback}${r.saknas?`\nFörsta rättningen sa att detta saknades: ${r.saknas}`:''}
+
+ELEVENS ÖVERKLAGAN:
+"${mot}"
+
+Pröva så här:
+- Avgör om det eleven skriver i sin överklagan är sakligt korrekt. Ge eleven rätt bara när det stämmer — aldrig för att hen argumenterar väl, ber snällt eller framhärdar.
+- Två namn på samma sak är samma sak. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Mesopotamien och Tvåflodslandet samma område. Har eleven rätt i att första rättningen räknade ett alternativnamn som en egen sak i uppräkningen, ska överklagandet bifallas.
+- Stavning, ordföljd, blandat svenska och engelska och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
+- Ungefärliga årtal räcker.
+- Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för något som hör till en annan fråga.
+- Var lika sträng som nivån kräver: ${STRICT[r.lvl].regel}
+- Blev första rättningen riktig ska du stå fast vid den och förklara varför, vänligt men tydligt.
+
+Svara ENDAST med ett JSON-objekt, ingen annan text och inga kodblock:
+{"beslut":"bifall" eller "delvis" eller "avslag","verdict":"ratt" eller "nastan" eller "fel","motivering":"högst tre meningar på svenska, tilltala eleven med du, och förklara varför du dömer som du gör"}
+
+"verdict" är den nya slutgiltiga bedömningen efter din prövning. Vid avslag ska den vara densamma som första rättningens dom.`;
+  let d=null,fel='';
+  try{
+    const raw=await callStark(prompt);
+    d=tolkaDom(raw);
+    if(!d)fel='Modellen svarade inte med giltig JSON.';
+  }catch(e){fel=e.message||'Anropet misslyckades.';}
+  busy=false;
+  if(!d){
+    $('ovSkicka').disabled=false;$('ovAvbryt').disabled=false;$('ovSkicka').textContent='Skicka överklagan';
+    $('ovErr').textContent='Kunde inte pröva överklagandet: '+fel;$('ovErr').style.display='block';
+    return;
+  }
+  r.provad=true;
+  // Räkna om från hur statistiken såg ut före rättningen, och lägg på den nya domen.
+  const s=st(r.id);
+  s.lvl=r.fore.lvl; s.ratt=r.fore.ratt; s.fel=r.fore.fel;
+  if(d.verdict==='ratt'){s.lvl=Math.min(MAX,s.lvl+1);s.ratt++;}
+  else if(d.verdict==='nastan'){s.ratt++;}
+  else{s.lvl=Math.max(0,s.lvl-1);s.fel++;}
+  const battre=d.verdict!==r.verdict&&d.verdict!=='fel';
+  if(d.verdict==='ratt'){streak++;$('streak').textContent=streak+' i rad';sRight();burst(18);}else{sHalf();}
+  const rubrik={bifall:'Överklagandet bifalls',delvis:'Överklagandet bifalls delvis',avslag:'Överklagandet avslås'}[d.beslut];
+  const nyDom={ratt:'Rätt',nastan:'Nästan',fel:'Inte riktigt'}[d.verdict];
+  $('ovWrap').innerHTML=`<div class="dom">
+    <p class="vt">${rubrik}</p>
+    <div>${esc(d.motivering||'')}</div>
+    <p class="dm">Ny bedömning: <b>${nyDom}</b>${battre?' — nivån är rättad.':'.'} Prövat av den starkaste modellen.</p>
+  </div>`;
+  save();
+  if(views&&views.stat)statView();
+}
+
+function tolkaDom(t){
+  let s=String(t).replace(/```json/gi,'').replace(/```/g,'').trim();
+  const i=s.indexOf('{'), j=s.lastIndexOf('}');
+  if(i<0||j<=i) return null;
+  let o;
+  try{ o=JSON.parse(s.slice(i,j+1)); }
+  catch(e){
+    try{ o=JSON.parse(s.slice(i,j+1).replace(/,\s*([}\]])/g,'$1')); }catch(e2){ return null; }
+  }
+  if(!o||typeof o!=='object') return null;
+  let b=String(o.beslut||o.decision||'').toLowerCase().trim();
+  if(/delvis|partial/.test(b)) b='delvis';
+  else if(/bifall|medh|ratt|rätt|^ja$/.test(b)) b='bifall';
+  else b='avslag';
+  let v=String(o.verdict||o.bedomning||o['bedömning']||'').toLowerCase().trim();
+  if(/^(ratt|rätt|correct)$/.test(v)) v='ratt';
+  else if(/nastan|nästan|delvis|partial/.test(v)) v='nastan';
+  else if(/fel|incorrect/.test(v)) v='fel';
+  else v = b==='bifall'?'ratt':(b==='delvis'?'nastan':'fel');
+  return {beslut:b, verdict:v, motivering:String(o.motivering||o.feedback||o.kommentar||'')};
 }
 
 function tolkaSvar(t){

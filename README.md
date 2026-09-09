@@ -11,15 +11,41 @@ server — den fungerar direkt i webbläsaren.
 
 ## Vad som finns i appen
 
-- **Öva** — 42 frågor i sex områden. Den frågar oftare om det du är osäker på.
+- **Öva** — 98 frågor i tio områden. Den frågar oftare om det du är osäker på.
 - **Statistik** — hur stor del av materialet du kan, per område.
 - **Register** — de frågor du svarat fel på, samlade för repetition.
 - **AI** — vilken tjänst och nyckel som används.
+
+Områdena är Jordbruksrevolutionen, Högkulturer, Historiska begrepp, Antikens
+världar, Sumererna, Babylonien och Assyrien, Fenicierna, Judarna, Egypten och
+Faraoner.
 
 Rättningen blir strängare ju bättre du kan en fråga (fem nivåer), och från
 nivå 2 formuleras frågan om så att man inte kan lära sig facit utantill.
 Allt du gjort sparas i din egen webbläsare — inget skickas till någon server
 utom själva AI-tjänsten.
+
+### Två namn på samma sak
+
+Rättaren får uttryckligen veta att samma sak kan heta olika saker: Huang He och
+Gula floden är en och samma flod, Ra och Re samma gud, Mesopotamien och
+Tvåflodslandet samma område. Den kräver aldrig båda namnen, och räknar inte ett
+alternativnamn som en egen post i en uppräkning. Ungefärliga årtal räcker, och
+svenska eller engelska namn duger lika bra.
+
+### Överklaga
+
+Blev rättningen ändå fel finns knappen **Överklaga rättningen** under varje svar
+som inte blev helt rätt. Man skriver en kort motivering, och då prövas fallet av
+den kraftfullaste modell tjänsten har — `starkast` i `PROV`, till exempel
+gpt-oss-120b hos Groq eller Gemini 2.5 Pro. Överdomaren ser frågan, facit,
+elevens svar, den första rättningens dom och elevens argument, och avgör sakligt.
+Den är instruerad att ge eleven rätt bara när argumentet faktiskt stämmer, inte
+för att det är välformulerat.
+
+Bifalls överklagandet räknas statistiken om från hur den såg ut *före*
+rättningen, så att ett felaktigt minus inte blir kvar. Avslås den står den
+första domen fast. En rättning kan överklagas en gång.
 
 ## Nycklar
 
