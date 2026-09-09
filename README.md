@@ -46,6 +46,19 @@ Tvåflodslandet samma område. Den kräver aldrig båda namnen, och räknar inte
 alternativnamn som en egen post i en uppräkning. Ungefärliga årtal räcker, och
 svenska eller engelska namn duger lika bra.
 
+### Öppna frågor
+
+Vissa frågor ber om exempel — *"Nämn två berömda egyptiska byggnader"*, *"Vad är
+ett imperium? Ge exempel."* Där är facit bara ett par av många möjliga svar, och
+Abu Simbel är ett lika riktigt svar som Karnak. Sådana kort märks med `oppen:1`
+i `CARDS`, och då får rättaren veta att vilka sakligt korrekta exempel som helst
+duger, att inget ska anges som saknat, och att detta går före strängheten på
+höga nivåer. Är rättaren osäker på om ett exempel utanför facit stämmer ska den
+eskalera till den starkare modellen istället för att chansa.
+
+För bestämda frågor — vilka floder, vilket årtal, vad ett ord betyder — gäller
+fortfarande att facit är svaret och ska täckas.
+
 ### Överklaga
 
 Blev rättningen ändå fel finns knappen **Överklaga rättningen** under varje svar
