@@ -1,6 +1,6 @@
-# Flodkulturerna — flashcards
+# Läxförhör — flashcards (historia och geografi)
 
-Ett läxförhör om de första flodkulturerna. Eleven skriver svaret med egna ord,
+Ett läxförhör om de första flodkulturerna och om jordens inre och yttre krafter. Eleven skriver svaret med egna ord,
 en AI rättar mot facit, och appen håller reda på vilka frågor som sitter och
 vilka som behöver repeteras.
 
@@ -11,14 +11,14 @@ server — den fungerar direkt i webbläsaren.
 
 ## Vad som finns i appen
 
-- **Öva** — 98 frågor i tio områden. Den frågar oftare om det du är osäker på.
+- **Öva** — 164 frågor i 19 områden. Den frågar oftare om det du är osäker på.
 - **Statistik** — hur stor del av materialet du kan, per område.
 - **Register** — de frågor du svarat fel på, samlade för repetition.
 - **AI** — vilken tjänst och nyckel som används.
 
 Områdena är Jordbruksrevolutionen, Högkulturer, Historiska begrepp, Antikens
 världar, Sumererna, Babylonien och Assyrien, Fenicierna, Judarna, Egypten och
-Faraoner.
+Faraoner, samt (geografi) Jordens inre, Jordens plattor, Vulkaner, Jordbävningar, Bergarter, Yttre krafter och vittring, Vatten och hav, Vind, ras och skred och Inlandsisen och människan.
 
 ### Välj ämnen
 

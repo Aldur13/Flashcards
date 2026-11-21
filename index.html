@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flodkulturerna — plugga med AI</title>
-<meta name="description" content="Läxförhör om de första flodkulturerna. Skriv svaren med egna ord, en AI rättar och håller reda på vad du kan.">
+<title>Plugga med AI — historia och geografi</title>
+<meta name="description" content="Läxförhör i historia och geografi. Skriv svaren med egna ord, en AI rättar och håller reda på vad du kan.">
 <meta name="theme-color" content="#1B2A5B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B2A5B'/%3E%3Cpath d='M16 5 L27 27 H5 Z' fill='%23C08423'/%3E%3Cpath d='M5 27 h22' stroke='%23EFEBDF' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,7 +81,7 @@ th{font-weight:500;font-size:12px;color:#8A836F}
 <body>
 
 <div class="shell">
-  <h1>De första flodkulturerna</h1>
+  <h1>Läxförhör: historia och geografi</h1>
   <p class="sub">Skriv svaret med egna ord. En AI rättar och håller reda på vad du kan.</p>
 
   <div class="tabs" role="tablist">
@@ -308,7 +308,73 @@ const CARDS=[
 {id:95,k:"Judarna",q:"Vad var speciellt med judarnas religion?",a:"Judarna trodde att det bara fanns en enda gud. Det väckte förvåning hos andra folk, som var vana att dyrka många olika gudar samtidigt."},
 {id:96,k:"Judarna",q:"Vilka riken anföll de judiska rikena?",a:"Assyrier, babylonier och romare anföll under olika perioder. Området och templet i Jerusalem förstördes vid två tillfällen, senast av romarna. Idag återstår endast västra muren av det sista templet."},
 {id:97,k:"Judarna",q:"Vad är Tanakh?",a:"Judarnas äldsta historia och samtidigt en helig, religiös skrift. Den innehåller samma texter som Gamla testamentet i Bibeln, och är därför svår att tolka historiskt."},
-{id:98,k:"Judarna",q:"När byggdes det första templet i Jerusalem, och vad hände med det?",a:"Under kung Salomos tid på 900-talet f.Kr. enligt Bibelns texter. Det förstördes 400 år senare, då många av judarna fördes bort i fångenskap till Babylonien."}
+{id:98,k:"Judarna",q:"När byggdes det första templet i Jerusalem, och vad hände med det?",a:"Under kung Salomos tid på 900-talet f.Kr. enligt Bibelns texter. Det förstördes 400 år senare, då många av judarna fördes bort i fångenskap till Babylonien."},
+{id:101,k:"Jordens inre",q:"Vad betyder orden endogena och exogena krafter?",a:"Endogena krafter är jordens inre krafter, de som verkar inifrån jorden. Exogena krafter är jordens yttre krafter, till exempel vind, vatten och is."},
+{id:102,k:"Jordens inre",q:"Vilka tre lager består jordens inre av?",a:"Jordskorpan ytterst, därunder jordmanteln och innerst kärnan."},
+{id:103,k:"Jordens inre",q:"Beskriv jordskorpan.",a:"Den är i genomsnitt cirka 35 km tjock och uppdelad i kontinentalplattor. Den är tjockast vid kontinenterna och tunnast i världshaven."},
+{id:104,k:"Jordens inre",q:"Beskriv jordmanteln.",a:"Den är cirka 80 % av jordmassan. Den är huvudsakligen en trögflytande massa av bergsmassa som kallas magma."},
+{id:105,k:"Jordens inre",q:"Beskriv kärnan.",a:"Cirka 5000 grader varm. Den är fast på grund av det enorma trycket. Den består av järn och nickel."},
+{id:106,k:"Jordens inre",q:"Vad är magma och vad är lava?",a:"Magma är den trögflytande bergsmassan i jordmanteln. När magman flyter upp på jordytan kallas den lava."},
+{id:107,k:"Jordens inre",q:"Vad är litosfären?",a:"Jordskorpan och mantelns yttre skikt tillsammans. Den är cirka 100 km tjock."},
+{id:108,k:"Jordens plattor",q:"Vilken teori lade Alfred Wegener fram 1912?",a:"Att jordens kontinenter hade suttit ihop en gång och sedan glider ifrån varandra."},
+{id:109,k:"Jordens plattor",q:"Vad fick Wegener att komma fram till teorin?",a:"Kontinenternas kustlinjer passar ihop som pusselbitar, till exempel Sydamerika och Afrika, och samma fossil och bergarter hittades på kontinenter långt från varandra. Den ursprungliga jättekontinenten kallas Pangea (för cirka 300 miljoner år sedan)."},
+{id:110,k:"Jordens plattor",q:"Vad heter modellen som förklarar hur kontinentalplattorna rör sig, och varför rör de sig?",a:"Platt-tektonik. Plattorna rör sig genom strömmar i jordmanteln."},
+{id:111,k:"Jordens plattor",q:"Hur många plattor består jordytan av?",a:"Sju större och tio mindre plattor."},
+{id:112,k:"Jordens plattor",q:"Vad sker vid spridningszoner?",a:"Plattorna glider isär. Uppsvällande lava på grund av det höga trycket under plattorna bildar en bergskedja (oceanrygg) på havets botten, med undervattensvulkaner. Island är bildat på detta sätt."},
+{id:113,k:"Jordens plattor",q:"Vad sker vid kollisionszoner?",a:"Plattorna pressas mot varandra. Jordbävningar och bergsveckning uppstår genom tryck från sidorna och underifrån."},
+{id:114,k:"Jordens plattor",oppen:1,q:"Vad skiljer unga och äldre bergskedjor åt? Ge exempel.",a:"Unga bergskedjor är höga, till exempel Himalaya. Äldre bergskedjor är lägre eftersom de slipats ner av is, vind och vatten, till exempel Skanderna (fjällen)."},
+{id:115,k:"Jordens plattor",q:"Vad är subduktion?",a:"Gränsen mellan två jordplattor där den ena plattan glider under den andra."},
+{id:116,k:"Jordens plattor",oppen:1,q:"Vad kan uppstå vid subduktion? Ge exempel.",a:"Djuphavsgravar, till exempel Marianergraven i Stilla havet (11 911 meter djup). Öbågar, till exempel Japan och Filippinerna. Bergskedjor när en havsplatta och en landplatta kolliderar."},
+{id:117,k:"Jordens plattor",q:"Vad är St Andreas förkastningen i Kalifornien exempel på?",a:"Ett ställe där jordplattor glider förbi varandra, vilket ger jordbävningar."},
+{id:118,k:"Vulkaner",q:"Var uppstår vulkanutbrott?",a:"Mellan jordskorpans plattor, i sprickor och där jordskorpan är tunn under världshaven. Även vid så kallade hot spots, till exempel Hawaiiöarna i Stilla havet."},
+{id:119,k:"Vulkaner",q:"Beskriv ett vulkanutbrott.",a:"Det förekommer jordskalv. Magman kommer i kontakt med grundvatten under vulkankratern och bildar heta gaser. Moln av vulkanaska och pimpsten slungas ut ur kratern, och magman bildar lavaströmmar som väller ut."},
+{id:120,k:"Vulkaner",q:"Vad är en sköldvulkan?",a:"En ganska platt vulkan som uppstår vid lättflytande lavaströmmar."},
+{id:121,k:"Vulkaner",q:"Vad är en kägelvulkan?",a:"En vulkan med hög och brant kant. Den uppstår när magman är trögflytande och har ofta våldsamma utbrott."},
+{id:122,k:"Vulkaner",q:"Varför har människor slagit sig ner nära ”sovande” vulkaner?",a:"När lavan svalnar och stelnar bidrar den till bördiga jordar, bra för odling."},
+{id:123,k:"Vulkaner",q:"Vilka konsekvenser kan stora vulkanutbrott få för klimatet?",a:"Vulkanvinter: askmolnen hindrar solstrålarna från att nå jorden, så det blir kallare klimat under lång tid. Exempel: när ön Thera exploderade cirka 1400 f Kr blev klimatet kallare under flera år."},
+{id:124,k:"Vulkaner",oppen:1,q:"Nämn några kända vulkaner.",a:"Till exempel Etna (Sicilien), Vesuvius (Italien), Hekla (Island), Yellowstone och Mount St Helens (USA)."},
+{id:125,k:"Jordbävningar",q:"Var uppstår jordbävningar och vad orsakar dem?",a:"De orsakas av rörelser i jordskorpan. När plattorna pressas samman eller glider isär kan de haka i varandra, vilket bygger upp spänningar som frigörs som jordbävningar. Gränszonerna mellan plattorna är mest utsatta."},
+{id:126,k:"Jordbävningar",q:"Kan jordbävningar uppstå i Sverige? Hur kommer det sig?",a:"Ja, men oftast svaga. Sverige ligger inte vid en plattgräns, men spänningar i jordskorpan, bland annat landhöjningen efter inlandsisen, kan ge små jordbävningar."},
+{id:127,k:"Jordbävningar",q:"Vad är seismiska vågor?",a:"Vågrörelser som fortplantar sig vidare i jordskorpan från jordbävningen."},
+{id:128,k:"Jordbävningar",q:"Vad är epicentrum?",a:"Platsen på jordytan rakt ovanför jordbävningen. Själva jordbävningen sker på 20–30 km djup."},
+{id:129,k:"Jordbävningar",q:"Vad är en seismograf och vad är Richterskalan?",a:"Seismografen mäter styrkan hos en jordbävning. Styrkan anges på Richterskalan."},
+{id:130,k:"Jordbävningar",q:"Vad är en tsunami och hur uppstår den?",a:"Jättevågor som uppstår vid vulkanutbrott på havsbotten och havsbävningar. De kan slå sönder och översvämma stora områden."},
+{id:131,k:"Jordbävningar",q:"Vad är en förkastning?",a:"En stor förskjutning i jordskorpan efter en jordbävning. Marken kan höjas, sänkas eller förskjutas."},
+{id:132,k:"Jordbävningar",q:"Hur uppstår en förkastningsbrant? Ge exempel.",a:"Marken höjs på ena sidan och sänks på den andra. Exempel: Omberg i Östergötland."},
+{id:133,k:"Jordbävningar",q:"Hur uppstår en horst? Ge exempel.",a:"Marken höjs. Exempel: Hallandsåsen."},
+{id:134,k:"Jordbävningar",q:"Hur uppstår en gravsänka? Ge exempel.",a:"Marken sänks. Exempel: Vättern."},
+{id:135,k:"Jordbävningar",oppen:1,q:"Ge exempel på kända jordbävningar.",a:"Till exempel Lissabon 1755 samt San Francisco 1906 och 1989."},
+{id:136,k:"Bergarter",q:"Vad är granit för typ av bergart?",a:"Eruptiv eller magmatisk bergart, som har uppkommit genom magma ur jordens inre."},
+{id:137,k:"Bergarter",q:"Vad är gnejs för typ av bergart?",a:"Omvandlad, metamorf bergart, som har uppkommit genom högt tryck."},
+{id:138,k:"Bergarter",q:"Vad är sandsten för typ av bergart?",a:"Sedimentär bergart, bildad av vittrad gnejs och granit som avlagrats på havsbotten och pressats samman av tryck."},
+{id:139,k:"Bergarter",q:"Vad är kalksten för typ av bergart?",a:"Sedimentär (lagrad) bergart, bildad av koralldjur och kalkalger för cirka 400 miljoner år sedan."},
+{id:140,k:"Bergarter",q:"Vad är mineral och vad är malm?",a:"Bergarter är uppbyggda av ett eller flera mineral. Fältspat, kvarts och glimmer bygger upp granit. Mineral med metaller är värdefulla, och lönar det sig att bryta berget kallas det malm, till exempel järnmalm."},
+{id:141,k:"Yttre krafter och vittring",oppen:1,q:"Ge exempel på vad som kan påverka landskapet (yttre krafter).",a:"Floder, vindar, havsströmmar, vågor, temperatur, inlandsisar, människans verksamhet samt djur och växter."},
+{id:142,k:"Yttre krafter och vittring",q:"Förklara erosion, transport och avlagring.",a:"Erosion är nedbrytning (av vind, vatten, värme och kyla). Transport är att det nerbrutna förs bort av vind och vatten. Avlagring är att det eroderade och transporterade materialet läggs av."},
+{id:143,k:"Yttre krafter och vittring",q:"Vad är solsprängning?",a:"Mekanisk vittring där berget spricker av stora temperaturskillnader mellan natt och dag, till exempel i öknar."},
+{id:144,k:"Yttre krafter och vittring",q:"Vad är frostsprängning?",a:"Mekanisk vittring: vatten fryser i sprickor och fördjupningar när temperaturen växlar mellan plus- och minusgrader och spränger sönder berget."},
+{id:145,k:"Yttre krafter och vittring",q:"Vad är rotsprängning?",a:"Mekanisk vittring: rötter bildar kilar som tränger ner i sprickor i berggrunden och vidgar dem. Vanligt i tropiska regnskogar."},
+{id:146,k:"Yttre krafter och vittring",q:"Förklara kemisk vittring genom kolsyra.",a:"Koldioxid i luften och regnvatten bildar kolsyra, som fräter på kalksten och sandsten så att stora grottsystem bildas i berggrunden."},
+{id:147,k:"Yttre krafter och vittring",q:"Hur påverkar dagens föroreningar kemisk vittring?",a:"Föroreningarna ger svavelsyra, som är betydligt surare och mer frätande än kolsyra. Det syns på byggnader och statyer."},
+{id:148,k:"Vatten och hav",q:"Vad uppstår när vatten transporterar grus, sand och slam?",a:"Partiklarna avlagras i lägre liggande områden där lager av sediment byggs upp. Slättland, deltaområden och sjöbottnar består av sådana avlagringar."},
+{id:149,k:"Vatten och hav",q:"Vad är en V-dal och hur bildas den?",a:"När landskapet är brant rinner floden snabbt och ganska rakt. Den eroderar på djupet och det bildas en V-formad dal."},
+{id:150,k:"Vatten och hav",q:"Vad är en meander och hur bildas den?",a:"När fallhöjden minskar rinner floden långsammare och slingrar sig fram i landskapet. Då säger man att den meandrar."},
+{id:151,k:"Vatten och hav",q:"Vad är ett delta och hur bildas det?",a:"När det strömmande vattnet stannar upp (i sjöar eller hav) sjunker allt som floden transporterat ner och bildar ett delta."},
+{id:152,k:"Vatten och hav",q:"Vad är abrasion?",a:"Vågornas och havsströmmarnas ständiga nötande på kuster och stränder."},
+{id:153,k:"Vatten och hav",oppen:1,q:"Ge exempel på abrasion.",a:"Dovers vita klippor i södra England (mjukare kalksten eller krita ger branta kustklippor). Raukar på Gotland (hårdare berggrund som står kvar när det mjukare kalkberget nötts bort). Strandvallar är spår på stränder efter vågor."},
+{id:154,k:"Vatten och hav",q:"Hur bildas sandrevlar och sandsporrar?",a:"Vågorna slår snett mot stranden och för med sig sand som avlagras och bildar långa vallar utanför kusten. Innanför vallarna ligger laguner. Exempel: Måkläppen vid Falsterbo."},
+{id:155,k:"Vind, ras och skred",q:"Vad kan ske när jord och sand inte har någon grönska som täcker marken?",a:"Vinden påverkar den bara marken och för jorden med sig. Det kallas jorderosion. Det gäller främst öknar och sandstränder, och jordbruksmark riskerar att täckas av sand."},
+{id:156,k:"Vind, ras och skred",q:"Vad var Dust Bowl?",a:"I USA på 1930-talet skadade en lång torka, vinderosion och dåliga jordbruksmetoder jordbruket, eftersom den odlingsbara jorden blåste bort."},
+{id:157,k:"Vind, ras och skred",q:"Vad är ett ras?",a:"När vittring och erosion får stenar att rasa nedför en brant."},
+{id:158,k:"Vind, ras och skred",q:"Vad är ett skred?",a:"När ett markområde sätts i rörelse utefter en sluttning. Exempel: Tuveskredet 1977."},
+{id:159,k:"Vind, ras och skred",q:"Vad är en lavin?",a:"Snömassor som sätts i rörelse nedför ett berg."},
+{id:160,k:"Inlandsisen och människan",q:"Vilka områden täcktes av inlandsisen och när försvann den?",a:"Norra Europa, Nordamerika och Grönland. Den började smälta för cirka 20 000 år sedan och var borta för cirka 10 000 år sedan. Istäcket kunde vara upp till 1000 meter tjockt."},
+{id:161,k:"Inlandsisen och människan",q:"Vad är flyttblock?",a:"Stora stenblock som inlandsisen fraktat långt och lämnat kvar när den smälte."},
+{id:162,k:"Inlandsisen och människan",q:"Vad är isräfflor?",a:"Repor i berggrunden efter stenar som följde med inlandsisen och skavde mot berget."},
+{id:163,k:"Inlandsisen och människan",q:"Vad är morän?",a:"Grus, sand och stenar som följde med isen. När isen smälte blev det ett löst jordtäcke över berggrunden."},
+{id:164,k:"Inlandsisen och människan",q:"Hur bildades rullstensåsar?",a:"Smältvatten rann som stora älvar under inlandsisen och förde med sten, grus och sand som la sig i långsmala åsar."},
+{id:165,k:"Inlandsisen och människan",q:"Förklara landhöjningen och hur stor den är.",a:"Inlandsisen tryckte ner berggrunden, och landet höjs fortfarande. I norra Sverige är landhöjningen cirka 1 m per 100 år och i Skåne cirka 10 cm per 100 år."},
+{id:166,k:"Inlandsisen och människan",oppen:1,q:"Ge exempel på hur människan har förändrat landskapet.",a:"Genom att anlägga städer, vägar, jordbruk, gruvor, konstbevattning, dammar med mera."},
 ];
 const MAX=4, KEY='flodkulturer-v1';
 const STRICT=[
@@ -762,16 +828,16 @@ async function check(){
   $('check').disabled=true;$('check').textContent='Rättar…';
   const shown=phrasing[cur.id]||cur.q;
   const lvl=st(cur.id).lvl;
-  const prompt=`Du rättar ett läxförhör i historia för en elev i årskurs 7.
+  const prompt=`Du rättar ett läxförhör i historia och geografi för en elev i årskurs 7.
 
 FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven blir förhörd på, så de avgör vad som är viktigt och hur strängt du kräver täckning. Men facit är inte en lista att pricka av ord för ord: använd din egen kunskap om ämnet för att avgöra om det eleven skrivit är sant, och tänk själv istället för att bara jämföra texter.
 
 Rätta så här:
 - Stavning, ordföljd och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
-- TVÅ NAMN PÅ SAMMA SAK ÄR SAMMA SAK. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Cheopspyramiden och Khufus pyramid samma byggnad, Mesopotamien och Tvåflodslandet samma område. Kräv ALDRIG att eleven skriver båda namnen, och skriv aldrig att det andra namnet saknas.
+- TVÅ NAMN PÅ SAMMA SAK ÄR SAMMA SAK. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Cheopspyramiden och Khufus pyramid samma byggnad, Mesopotamien och Tvåflodslandet samma område. Inom geografin: jordbävning och jordskalv, kontinentalplattor och jordplattor, spridningszon och divergerande plattgräns, kollisionszon och konvergerande plattgräns är samma sak. Kräv ALDRIG att eleven skriver båda namnen, och skriv aldrig att det andra namnet saknas.
 - Står två namn på samma sak i facit, ofta efter ett komma eller inom parentes, är det EN sak i uppräkningen — inte två. Räkna antalet saker i facit rätt innan du bedömer om eleven missat något.
-- Svenska, engelska eller det ursprungliga namnet duger lika bra: Eufrat och Euphrates, Nilen och Nile, Gula floden och Yellow River.
-- Ungefärliga årtal räcker. Ligger eleven inom ett par hundra år, eller skriver århundradet istället för årtalet, är det rätt.
+- Svenska, engelska eller det ursprungliga namnet duger lika bra: Eufrat och Euphrates, Nilen och Nile, Gula floden och Yellow River, Pangea och Pangaea, epicentrum och epicenter.
+- Ungefärliga årtal och siffror räcker. Ligger eleven inom ett par hundra år, eller skriver århundradet istället för årtalet, är det rätt.
 - Skriver eleven något korrekt som inte står i facit är det aldrig fel. Bara ett felaktigt sakpåstående drar ner betyget.
 - ${STRICT[lvl].regel}
 - Bedöm bara det som frågan faktiskt frågar efter. Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för att eleven missat något som hör till en annan fråga.
@@ -893,7 +959,7 @@ async function provaOverklagan(){
   busy=true;$('ovSkicka').disabled=true;$('ovAvbryt').disabled=true;$('ovSkicka').textContent='Prövar…';
   const r=sistaRattning;
   const domar={ratt:'rätt',nastan:'nästan rätt',fel:'fel'}[r.verdict]||r.verdict;
-  const prompt=`Du är överdomare vid ett läxförhör i historia för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
+  const prompt=`Du är överdomare vid ett läxförhör i historia och geografi för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
 
 FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven förhörs på, så de avgör vad som är viktigt. Men facit är inte en lista att pricka av ord för ord — använd din egen kunskap om ämnet och tänk själv.
 ${r.kort.oppen?`
@@ -910,11 +976,11 @@ ELEVENS ÖVERKLAGAN:
 
 Pröva så här:
 - Avgör om det eleven skriver i sin överklagan är sakligt korrekt. Ge eleven rätt bara när det stämmer — aldrig för att hen argumenterar väl, ber snällt eller framhärdar.
-- Två namn på samma sak är samma sak. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Mesopotamien och Tvåflodslandet samma område. Har eleven rätt i att första rättningen räknade ett alternativnamn som en egen sak i uppräkningen, ska överklagandet bifallas.
+- Två namn på samma sak är samma sak. Huang He och Gula floden är en och samma flod. Ra och Re är samma gud, Konungarnas dal och Kungarnas dal samma plats, Mesopotamien och Tvåflodslandet samma område. Inom geografin: jordbävning och jordskalv, kontinentalplattor och jordplattor, spridningszon och divergerande plattgräns, kollisionszon och konvergerande plattgräns är samma sak. Har eleven rätt i att första rättningen räknade ett alternativnamn som en egen sak i uppräkningen, ska överklagandet bifallas.
 - Ber frågan om exempel duger vilka sakligt korrekta exempel som helst. Har första rättningen underkänt ett exempel enbart för att det inte stod i facit, och exemplet faktiskt stämmer, ska överklagandet bifallas. Abu Simbel är ett lika riktigt svar på "nämn två berömda egyptiska byggnader" som Karnak.
 - Avgör med din egen ämneskunskap om elevens exempel verkligen stämmer. Gör det inte det, avslå och förklara varför.
 - Stavning, ordföljd, blandat svenska och engelska och egna formuleringar spelar ingen roll. Bara sakinnehållet räknas.
-- Ungefärliga årtal räcker.
+- Ungefärliga årtal och siffror räcker.
 - Kräv aldrig fakta som inte står i facit, och sänk aldrig betyget för något som hör till en annan fråga.
 - Var lika sträng som nivån kräver: ${STRICT[r.lvl].regel}
 - Blev första rättningen riktig ska du stå fast vid den och förklara varför, vänligt men tydligt.
