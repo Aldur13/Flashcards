@@ -187,3 +187,12 @@ python3 -m http.server 8000
 
 och öppna http://localhost:8000. (Att dubbelklicka på filen fungerar inte:
 webbläsaren blockerar anrop till AI-tjänster från `file://`.)
+
+## Struktur och Språk-läge
+
+- **Plugga**: frågorna är ordnade som ämne → kategori → område (se `STRUKTUR` i `index.html`).
+  Nya frågor läggs i `CARDS`, och nya områden läggs in under rätt kategori i `STRUKTUR`.
+- **Språk → Glosor**: tyska glosor från tyskboken, utan AI. De ligger i `GLOSOR` som rader
+  `svenska # tyska` (alternativ skiljs med `;`). Substantiv skrivs med artikel (`der Zug`).
+- **Nära-svar** (kan stängas av): är en bokstav fel, eller saknas stor bokstav eller artikel,
+  får man veta att man är nära och prova igen.

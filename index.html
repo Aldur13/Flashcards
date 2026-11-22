@@ -76,14 +76,21 @@ th{font-weight:500;font-size:12px;color:#8A836F}
 .pop{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:9}
 .streak{font-family:'Fraunces',serif;font-size:14px}
 @media (prefers-reduced-motion:reduce){.pop{display:none}}
+  .amnehead,.kathead{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;cursor:pointer;text-align:left;font-family:'Fraunces',serif}
+  .amnehead{margin:18px 0 4px;padding:9px 12px;border-radius:9px;background:var(--lapis);color:#fff;font-size:18px}
+  .kathead{margin:10px 0 0;padding:7px 12px;border-radius:8px;background:var(--lime-2);color:var(--ink);font-size:15px}
+  .amnehead span,.kathead span{font-family:inherit;font-size:11px;opacity:.75}
+  .ginp{width:100%;box-sizing:border-box;padding:12px;border:1px solid #C9C3B2;border-radius:10px;font-size:18px;font-family:inherit;background:#fff;color:var(--ink)}
 </style>
 </head>
 <body>
 
 <div class="shell">
-  <h1>Läxförhör: historia och geografi</h1>
-  <p class="sub">Skriv svaret med egna ord. En AI rättar och håller reda på vad du kan.</p>
+  <h1>Plugga</h1>
+  <p class="sub">Frågor med AI-rättning och språkglosor.</p>
 
+  <div class="tabs" id="modbar" style="margin-bottom:6px"><button class="tab" id="m-plugga" aria-selected="true">Plugga</button><button class="tab" id="m-sprak" aria-selected="false">Språk</button></div>
+  <div id="modPlugga">
   <div class="tabs" role="tablist">
     <button class="tab" id="t-ova" role="tab" aria-selected="true">Öva</button>
     <button class="tab" id="t-stat" role="tab" aria-selected="false">Statistik</button>
@@ -207,6 +214,8 @@ th{font-weight:500;font-size:12px;color:#8A836F}
     <button class="act ghost" id="showlog" style="width:100%;margin-top:16px;">Visa logg</button>
     <pre id="logbox" style="display:none;white-space:pre-wrap;font-size:11px;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin-top:8px;max-height:260px;overflow:auto;"></pre>
   </div>
+  </div>
+  <div id="modSprak" style="display:none;margin-top:14px"></div>
 </div>
 
 <script>
@@ -375,6 +384,10 @@ const CARDS=[
 {id:164,k:"Inlandsisen och människan",q:"Hur bildades rullstensåsar?",a:"Smältvatten rann som stora älvar under inlandsisen och förde med sten, grus och sand som la sig i långsmala åsar."},
 {id:165,k:"Inlandsisen och människan",q:"Förklara landhöjningen och hur stor den är.",a:"Inlandsisen tryckte ner berggrunden, och landet höjs fortfarande. I norra Sverige är landhöjningen cirka 1 m per 100 år och i Skåne cirka 10 cm per 100 år."},
 {id:166,k:"Inlandsisen och människan",oppen:1,q:"Ge exempel på hur människan har förändrat landskapet.",a:"Genom att anlägga städer, vägar, jordbruk, gruvor, konstbevattning, dammar med mera."},
+];
+const STRUKTUR=[
+{amne:'Historia',kat:[{namn:'De första flodkulturerna',k:["Jordbruksrevolutionen", "Högkulturer", "Sumererna", "Babylonien och Assyrien", "Egypten", "Faraoner", "Historiska begrepp", "Antikens världar", "Fenicierna", "Judarna"]}]},
+{amne:'Geografi',kat:[{namn:'Jordens inre och yttre krafter',k:["Jordens inre", "Jordens plattor", "Vulkaner", "Jordbävningar", "Bergarter", "Yttre krafter och vittring", "Vatten och hav", "Vind, ras och skred", "Inlandsisen och människan"]}]}
 ];
 const MAX=4, KEY='flodkulturer-v1';
 const STRICT=[
@@ -668,18 +681,28 @@ function ritaAmnesval(){
   <p style="margin:0 0 14px;font-size:13px;color:#6A6558;line-height:1.5">${harData
     ?'Sorterat efter hur säkert du kan varje område — det du kan sämst ligger överst, så nummer 1 är det som behövs mest. Kryssa i det du vill ha med.'
     :'Kryssa i det du vill öva på. När du har svarat på några frågor sorteras listan om efter vad du kan sämst, och de områden som behövs mest märks som rekommenderade.'}</p>`;
-  rader.forEach((r,i)=>{
-    const vald=valTmp.indexOf(r.k)>=0;
-    h+=`<label class="amne">
+  const rad=(r,i)=>{const vald=valTmp.indexOf(r.k)>=0;
+    return `<label class="amne">
       <input type="checkbox" data-amne="${esc(r.k)}"${vald?' checked':''}>
       <span class="nr">${i+1}</span>
       <span class="an">${esc(r.k)}${rek.indexOf(r.k)>=0?'<span class="rek">rekommenderas</span>':''}
         <span class="am">${r.antal} frågor · du kan ${Math.round(r.niva*100)} procent</span></span>
       <span class="bar"><span style="width:${Math.round(r.niva*100)}%"></span></span>
-    </label>`;
+    </label>`;};
+  const grp=(cls,txt,ks)=>`<button type="button" class="${cls}" data-ks="${encodeURIComponent(JSON.stringify(ks))}">${esc(txt)}<span>${ks.every(k=>valTmp.indexOf(k)>=0)?'välj bort alla':'välj alla'}</span></button>`;
+  const anv=new Set();
+  STRUKTUR.forEach(g=>{
+    const alla=[].concat(...g.kat.map(k=>k.k)).filter(k=>rader.some(r=>r.k===k));
+    if(!alla.length)return;
+    h+=grp('amnehead',g.amne,alla);
+    g.kat.forEach(kt=>{const ks=kt.k.filter(k=>rader.some(r=>r.k===k));if(!ks.length)return;
+      h+=grp('kathead',kt.namn,ks);
+      ks.forEach(k=>{anv.add(k);const i=rader.findIndex(r=>r.k===k);h+=rad(rader[i],i);});});
   });
-  h+=`<div class="row"><button class="act ghost" id="amAlla">Alla ämnen</button>${harData?'<button class="act ghost" id="amSvag">De tre svagaste</button>':''}</div>
-  <div id="amErr" class="err" style="display:none">Kryssa i minst ett ämne.</div>
+  const ovr=rader.filter(r=>!anv.has(r.k));
+  if(ovr.length){h+=grp('amnehead','Övrigt',ovr.map(r=>r.k));ovr.forEach(r=>{h+=rad(r,rader.indexOf(r));});}
+  h+=`<div class="row"><button class="act ghost" id="amAlla">Allt</button>${harData?'<button class="act ghost" id="amSvag">De tre svagaste</button>':''}</div>
+  <div id="amErr" class="err" style="display:none">Kryssa i minst ett område.</div>
   <div class="row"><button class="act" id="amKlar">Börja öva</button></div>`;
   $('amnesval').innerHTML=h;
   $('amnesval').querySelectorAll('input[data-amne]').forEach(b=>{
@@ -690,6 +713,9 @@ function ritaAmnesval(){
       $('amErr').style.display='none';
     };
   });
+  $('amnesval').querySelectorAll('button[data-ks]').forEach(b=>{b.onclick=()=>{audio();
+    const ks=JSON.parse(decodeURIComponent(b.getAttribute('data-ks')));const alla=ks.every(k=>valTmp.indexOf(k)>=0);
+    valTmp=alla?valTmp.filter(k=>ks.indexOf(k)<0):valTmp.concat(ks.filter(k=>valTmp.indexOf(k)<0));ritaAmnesval();};});
   $('amAlla').onclick=()=>{audio();valTmp=allaAmnen();ritaAmnesval();};
   if($('amSvag'))$('amSvag').onclick=()=>{audio();valTmp=amnenSvagastForst().slice(0,3).map(r=>r.k);ritaAmnesval();};
   $('amKlar').onclick=()=>{
@@ -1338,11 +1364,144 @@ function poolKlar(){
   if(harDelad())renderPool();
   if(!harDelad()&&!getKey()&&getProv()!=='custom')show('set');
 }
+const GLOSOR=[
+{namn:"Fraser (Schlüsselwörter)",rader:["God morgon! # Guten Morgen!", "Har du sovit gott? # Hast du gut geschlafen?", "Sluta, är ni snälla! # Hört auf, bitte!", "Titta! # Schau mal!; Schaut mal!", "Jag är hungrig! # Ich habe Hunger!", "Jag är törstig! # Ich habe Durst!", "Hur kommer vi till …? # Wie kommen wir zum …?", "Hur långt är det kvar? # Wie weit ist es noch?"]},
+{namn:"Auf geht's nach Engelberg! (s. 9)",rader:["fisk # der Fisch", "akvarium # das Aquarium", "katt # die Katze", "hobby # das Hobby", "rita # zeichnen", "läsa # lesen", "arbeta # arbeiten", "allergi # die Allergie", "föräldrar # die Eltern", "alltså # also", "inte längre # nicht mehr", "tillsammans # zusammen", "skilda # geschieden", "styvpappa # der Stiefvater", "barn # das Kind; die Kinder", "syskon # die Geschwister", "bror # der Bruder", "elva # elf", "tolv # zwölf", "tretton # dreizehn", "naturligtvis # natürlich", "tack # danke", "inte så bra # nicht so gut", "så där # so lala", "Hur mår du? # Wie geht's?"]},
+{namn:"Wann sind wir endlich da?",rader:["tåg # der Zug", "bil # das Auto", "flygplan # das Flugzeug", "lov # die Ferien", "karta # die Karte", "där borta # dort", "här uppe # hier oben", "här nere # hier unten", "snart # bald", "stad # die Stadt", "kanske # vielleicht", "besöka # besuchen", "innan # bevor", "äntligen # endlich", "ryggsäck # der Rucksack", "äta # essen", "hunger # der Hunger", "törst # der Durst", "Det stämmer. # Das stimmt.", "mycket roligt # sehr witzig", "allt # alles", "hem # nach Hause"]},
+{namn:"Was macht man in Engelberg? (s. 16)",rader:["stor # groß", "liten # klein", "många saker # viele Sachen", "centrum # das Zentrum", "gå på bio # ins Kino gehen", "åka skidor # Ski fahren", "åka skridskor # Schlittschuh laufen", "åka pulka # rodeln", "vandra # wandern", "cykla # Fahrrad fahren", "bada # baden", "semesterhus # das Ferienhaus", "skidområde # das Skigebiet", "station # der Bahnhof", "vänta # warten", "anlända # ankommen", "vän # der Freund", "sedan # dann", "berg # der Berg", "se # sehen"]},
+{namn:"Grüezi alle miteinander! (s. 19)",rader:["välkommen # willkommen", "hjälpa # helfen", "bagage # das Gepäck", "överallt # überall", "snö # der Schnee", "fantastisk # fantastisch", "förlåt # Tut mir leid", "hund # der Hund", "farlig # gefährlich", "snäll # lieb", "tyvärr # leider", "ingen # kein", "förresten # übrigens", "syster # die Schwester", "lite # ein bisschen", "prata # sprechen", "förstå # verstehen", "engelska # Englisch", "franska # Französisch", "svenska # Schwedisch"]},
+{namn:"Rundtur i lägenheten (s. 20)",rader:["kök # die Küche", "matsal # das Esszimmer", "sovrum # das Schlafzimmer", "vardagsrum # das Wohnzimmer", "badrum # das Bad", "toalett # die Toilette; das Klo", "dusch # die Dusche", "trappa # die Treppe", "bord # der Tisch", "stol # der Stuhl", "säng # das Bett", "lampa # die Lampe", "soffa # das Sofa", "fåtölj # der Sessel", "tv # der Fernseher", "bråk # der Streit", "dela upp # aufteilen", "senare # später", "hyra # mieten", "hämta # holen", "imorgon # morgen", "underbart # wunderbar", "Det var så lite. # Gern geschehen."]},
+{namn:"Wann beginnt der Skikurs?",rader:["skidpjäxor # die Skischuhe", "skostorlek # die Schuhgröße", "fot # der Fuß", "jättestor # riesig", "börja # beginnen", "vi träffas # wir treffen uns", "halv nio # halb neun", "tidig # früh", "lift # der Lift", "verkligen # wirklich", "ju # doch", "hata # hassen", "galen # verrückt", "stiga upp # aufstehen", "väckarklocka # der Wecker", "kvart över åtta # Viertel nach acht", "eftermiddag # der Nachmittag", "läxor # die Hausaufgaben", "skämt # der Witz", "sju # sieben"]},
+{namn:"Fährst du viel Ski in Schweden? (s. 26)",rader:["mycket # viel", "ofta # oft", "gärna # gern", "varje dag # jeden Tag", "måndag # Montag", "tisdag # Dienstag", "torsdag # Donnerstag", "söndag # Sonntag", "spännande # spannend", "bok # das Buch", "nästan # fast", "tråkig # öde", "scout # der Pfadfinder"]},
+{namn:"Das schmeckt lecker! (söndag, suddig sida – kolla)",rader:["middag # das Abendessen", "ost # der Käse", "ostfondue # das Käsefondue", "läcker # lecker", "smaka # schmecken", "frukost # das Frühstück", "prova # probieren", "visa # zeigen", "äppelmos # das Apfelmus", "allergisk # allergisch", "laktosintolerant # laktoseintolerant", "vilja # wollen", "kunna # können", "få (ha lov) # dürfen", "gilla # mögen", "måste # müssen", "Inget problem. # Kein Problem."]},
+{namn:"Mein Lieblingsfach ist … (måndag)",rader:["favoritämne # das Lieblingsfach", "skola # die Schule", "till fots # zu Fuß", "samma # gleiche; gleich", "lektion # der Unterricht", "schema # der Stundenplan", "vansinne # der Wahnsinn", "en gång i veckan # einmal pro Woche", "frivillig # freiwillig", "annars # sonst", "idrottshall # die Sporthalle", "idrottsplats # der Sportplatz", "ämnen # die Fächer", "skoldag # der Schultag", "bakom det # dahinter"]}
+];
+/* ===== Språk: glosor (svenska # tyska, alternativ skiljs med ;) ===== */
+const GSET_KEY='glosor-set';
+function gSet(){try{return Object.assign({nara:true,rikt:'sv'},JSON.parse(localStorage.getItem(GSET_KEY)||'{}'));}catch(e){return {nara:true,rikt:'sv'};}}
+function gSpara(x){try{localStorage.setItem(GSET_KEY,JSON.stringify(x));}catch(e){}}
+function gDela(t){return t.split(';').map(x=>x.trim()).filter(Boolean);}
+function gAlla(){const o=[];GLOSOR.forEach((g,gi)=>g.rader.forEach((r,i)=>{const p=r.split('#');o.push({id:gi+'-'+i,g:gi,sv:gDela(p[0]),de:gDela(p[1])});}));return o;}
+function gBland(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function normG(t){return t.trim().replace(/[’`´]/g,"'").replace(/\s+/g,' ').replace(/[.!?]+$/,'').trim();}
+/* true om texterna skiljer sig med högst en bokstav (byte, saknad eller extra) */
+function ed1(a,b){
+  if(a===b)return true;const d=a.length-b.length;if(Math.abs(d)>1)return false;
+  let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;
+  if(d===0)return a.slice(i+1)===b.slice(i+1);
+  return d===1?a.slice(i+1)===b.slice(i):a.slice(i)===b.slice(i+1);
+}
+function bedomG(svar,facit,nara){
+  const s=normG(svar),f=facit.map(normG);
+  if(f.indexOf(s)>=0)return {s:'ratt'};
+  if(!nara)return {s:'fel'};
+  const sl=s.toLowerCase();
+  for(const x of f){
+    const xl=x.toLowerCase(),xa=xl.replace(/^(der|die|das) /,'');
+    if(sl===xl)return {s:'nara',tips:'Kolla stora och små bokstäver. Substantiv skrivs med stor bokstav på tyska.'};
+    if(xa!==xl&&sl===xa)return {s:'nara',tips:'Nästan! Glöm inte artikeln (der, die eller das) framför ordet.'};
+    if(xl.length>=4&&ed1(sl.replace(/ß/g,'ss'),xl.replace(/ß/g,'ss')))return {s:'nara',tips:'Nära! En bokstav är fel, saknas eller är en för mycket.'};
+  }
+  return {s:'fel'};
+}
+let GV={valda:GLOSOR.map((_,i)=>i),ko:[],ix:0,ratt:0,fel:[],steg:'fraga',forsok:0};
+function setMode(m){
+  $('modPlugga').style.display=m==='plugga'?'block':'none';
+  $('modSprak').style.display=m==='sprak'?'block':'none';
+  $('m-plugga').setAttribute('aria-selected',m==='plugga'?'true':'false');
+  $('m-sprak').setAttribute('aria-selected',m==='sprak'?'true':'false');
+  try{localStorage.setItem('flod-mode',m);}catch(e){}
+  if(m==='sprak'&&!$('modSprak').innerHTML.trim())sprakMeny();
+}
+$('m-plugga').onclick=()=>setMode('plugga');
+$('m-sprak').onclick=()=>setMode('sprak');
+function sprakMeny(){
+  $('modSprak').innerHTML=`<div class="panel"><p class="q" style="margin-bottom:6px">Språk</p>
+  <p style="margin:0 0 12px;font-size:13px;color:#6A6558">Välj vad du vill öva på.</p>
+  <div class="amne" id="goGlosor"><span class="an">Glosor<span class="am">${gAlla().length} ord och fraser från tyskboken</span></span><span style="font-size:22px">›</span></div></div>`;
+  $('goGlosor').onclick=gVal;
+}
+function gVal(){
+  const s=gSet();
+  let h=`<div class="panel"><p class="q" style="margin-bottom:6px">Glosor</p><p style="margin:0 0 10px;font-size:13px;color:#6A6558">Vilka texter vill du öva?</p>`;
+  GLOSOR.forEach((g,i)=>{h+=`<label class="amne"><input type="checkbox" data-g="${i}"${GV.valda.indexOf(i)>=0?' checked':''}><span class="an">${esc(g.namn)}<span class="am">${g.rader.length} glosor</span></span></label>`;});
+  h+=`<div class="row"><button class="act ghost" id="gAlla">Alla</button><button class="act ghost" id="gIngen">Ingen</button></div>
+  <p style="margin:18px 0 4px;font-size:14px;font-weight:600">Inställningar</p>
+  <label class="amne"><input type="checkbox" id="gNara"${s.nara?' checked':''}><span class="an">Nära-svar<span class="am">Är bara en bokstav fel, eller saknas stor bokstav eller artikel, får du veta att du är nära och prova igen.</span></span></label>
+  <label class="amne"><input type="checkbox" id="gRikt"${s.rikt==='de'?' checked':''}><span class="an">Tyska → svenska<span class="am">Av: du ser svenskan och skriver tyskan.</span></span></label>
+  <div id="gErr" class="err" style="display:none">Kryssa i minst en text.</div>
+  <div class="row"><button class="act ghost" id="gTill">Tillbaka</button><button class="act" id="gStart">Börja öva</button></div></div>`;
+  $('modSprak').innerHTML=h;
+  const bocka=()=>{GV.valda=[...$('modSprak').querySelectorAll('input[data-g]')].filter(b=>b.checked).map(b=>+b.getAttribute('data-g'));$('gErr').style.display='none';};
+  $('modSprak').querySelectorAll('input[data-g]').forEach(b=>b.onchange=bocka);
+  $('gAlla').onclick=()=>{GV.valda=GLOSOR.map((_,i)=>i);gVal();};
+  $('gIngen').onclick=()=>{GV.valda=[];gVal();};
+  $('gTill').onclick=sprakMeny;
+  $('gStart').onclick=()=>{
+    if(!GV.valda.length){$('gErr').style.display='block';return;}
+    gSpara({nara:$('gNara').checked,rikt:$('gRikt').checked?'de':'sv'});
+    gKor(gBland(gAlla().filter(x=>GV.valda.indexOf(x.g)>=0)));
+  };
+}
+function gKor(lista){GV.ko=lista;GV.ix=0;GV.ratt=0;GV.fel=[];GV.steg='fraga';GV.forsok=0;gFraga();}
+function gFraga(){
+  const it=GV.ko[GV.ix];if(!it)return gSlut();
+  const sv2de=gSet().rikt!=='de';
+  $('modSprak').innerHTML=`<div class="panel"><div class="meta"><span class="chip">${GV.ix+1} / ${GV.ko.length}</span><span class="chip">${sv2de?'Svenska → tyska':'Tyska → svenska'}</span></div>
+  <p class="q">${esc((sv2de?it.sv:it.de).join(' / '))}</p>
+  <input id="gIn" class="ginp" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Ditt svar">
+  ${sv2de?'<div class="row" style="margin-top:8px">'+['ä','ö','ü','ß'].map(c=>`<button type="button" class="act ghost gch" data-c="${c}">${c}</button>`).join('')+'</div>':''}
+  <div id="gRes" style="margin-top:10px;font-size:15px;line-height:1.45"></div>
+  <div class="row"><button class="act ghost" id="gVisa">Visa svaret</button><button class="act" id="gKolla">Kolla</button></div>
+  <div class="row"><button class="act ghost" id="gAvbryt">Avsluta</button></div></div>`;
+  GV.steg='fraga';GV.forsok=0;
+  $('gKolla').onclick=gKolla;$('gVisa').onclick=()=>gKlar(false);$('gAvbryt').onclick=gSlut;
+  $('gIn').addEventListener('keydown',e=>{if(e.key==='Enter')gKolla();});
+  $('modSprak').querySelectorAll('.gch').forEach(b=>{
+    b.onmousedown=e=>e.preventDefault();
+    b.onclick=()=>{const i=$('gIn'),p=i.selectionStart==null?i.value.length:i.selectionStart;
+      i.value=i.value.slice(0,p)+b.getAttribute('data-c')+i.value.slice(i.selectionEnd==null?p:i.selectionEnd);
+      i.focus();i.setSelectionRange(p+1,p+1);};
+  });
+  $('gIn').focus();
+}
+function gFacit(){const it=GV.ko[GV.ix];return gSet().rikt==='de'?it.sv:it.de;}
+function gMsg(txt,farg){$('gRes').innerHTML=`<span style="color:${farg};font-weight:600">${txt}</span>`;}
+function gKlar(rätt){
+  const it=GV.ko[GV.ix],f=gFacit().join(' / ');
+  GV.steg='klar';$('gIn').disabled=true;$('gVisa').style.display='none';
+  if(rätt){GV.ratt++;gMsg('Rätt! '+esc(f),'var(--malachite)');}
+  else{
+    gMsg('Rätt svar: '+esc(f),'var(--clay)');
+    if(!GV.fel.some(x=>x.id===it.id))GV.fel.push(it);
+    if(!it.om)GV.ko.push(Object.assign({},it,{om:true}));
+  }
+  $('gKolla').textContent='Nästa';$('gKolla').focus();
+}
+function gKolla(){
+  if(GV.steg==='klar'){GV.ix++;return gFraga();}
+  const v=$('gIn').value;if(!v.trim())return;
+  const b=bedomG(v,gFacit(),gSet().nara);
+  if(b.s==='ratt')return gKlar(true);
+  if(b.s==='nara'){GV.forsok++;gMsg(esc(b.tips)+' Prova igen!','var(--ochre)');$('gIn').focus();return;}
+  gKlar(false);
+}
+function gSlut(){
+  const fel=GV.fel;
+  $('modSprak').innerHTML=`<div class="panel"><p class="q" style="margin-bottom:8px">${fel.length?'Bra jobbat!':'Alla rätt!'}</p>
+  <p style="margin:0 0 12px;font-size:15px">${GV.ratt} rätta svar${fel.length?`, ${fel.length} ord att träna mer på`:''}.</p>
+  ${fel.length?'<div style="font-size:14px;line-height:1.6;margin-bottom:6px">'+fel.map(x=>`<div>${esc(x.sv.join(' / '))} <span style="color:#6A6558">→</span> <b>${esc(x.de.join(' / '))}</b></div>`).join('')+'</div>':''}
+  <div class="row"><button class="act ghost" id="gKlart">Klart</button>${fel.length?'<button class="act" id="gOm">Öva dem igen</button>':''}</div></div>`;
+  $('gKlart').onclick=sprakMeny;
+  if(fel.length)$('gOm').onclick=()=>gKor(gBland(fel.map(x=>Object.assign({},x,{om:false}))));
+}
+
 $('check').onclick=check;
 $('skip').onclick=()=>{audio();nextCard();};
 $('cat').onclick=visaAmnesval;
 $('ans').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))check();});
 load();nextCard();setupSettings();
+setMode(localStorage.getItem('flod-mode')==='sprak'?'sprak':'plugga');
 /* Första besöket: låt eleven välja områden innan första frågan. */
 if(!harValtAmnen())visaAmnesval();
 laddaPool().then(poolKlar);
