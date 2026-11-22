@@ -196,3 +196,20 @@ webbläsaren blockerar anrop till AI-tjänster från `file://`.)
   `svenska # tyska` (alternativ skiljs med `;`). Substantiv skrivs med artikel (`der Zug`).
 - **Nära-svar** (kan stängas av): är en bokstav fel, eller saknas stor bokstav eller artikel,
   får man veta att man är nära och prova igen.
+
+## Tävla, profiler och säkerhet
+
+**Tävla.** Värdens webbläsare är servern. Spelarna ansluter direkt till värden med en femtecknad kod (WebRTC via
+PeerJS, som ligger i `peerjs.min.js` i repot så att inget skript laddas från tredje part). Värden väljer tid per
+runda, antal rundor, högsta antal spelare och vilka kategorier frågorna hämtas från. Alla svar rättas i en enda
+faktagranskning med den starkaste modellen (1–100 poäng) med **värdens egen AI-nyckel**. Webbsökning används om
+leverantören stöder det (Groq, OpenRouter, Anthropic), annars rättas det utan sökning och resultatet visar det.
+
+**Profiler.** Varje profil har egen progress i webbläsaren. "Min profil" använder samma lagring som tidigare, så
+befintlig progress ligger kvar. Progress kan sparas som JSON-fil och laddas in som en ny profil (skriver aldrig
+över något).
+
+**Säkerhet.** AI-nycklar sparas bara i värdens webbläsare och skickas aldrig till spelarna. Namn och svar rensas och
+visas som ren text. Meddelanden begränsas i storlek, typ och antal (ett svar per spelare och runda). Svaren
+behandlas som data i prompten, så uppmaningar i ett svar ger 1 poäng. Spelare kan bara gå med innan spelet startar,
+och värden kan ta bort spelare.
