@@ -421,6 +421,7 @@ function load(){
 }
 function save(){
   try{localStorage.setItem(KEY,JSON.stringify(stats));}catch(e){}
+  if(typeof molnPush==='function')molnPush();
 }
 const PROV={
  groq:{namn:'Groq',url:'https://api.groq.com/openai/v1/chat/completions',shape:'openai',
@@ -652,7 +653,7 @@ function sparatVal(){
 }
 function harValtAmnen(){const v=sparatVal();return !!(v&&v.length);}
 function valdaAmnen(){const v=sparatVal();return (v&&v.length)?v:allaAmnen();}
-function sattAmnen(v){try{localStorage.setItem(AMNEN_KEY,JSON.stringify(v));}catch(e){}}
+function sattAmnen(v){try{localStorage.setItem(AMNEN_KEY,JSON.stringify(v));}catch(e){}if(typeof molnPush==='function')molnPush();}
 function amnesKunskap(k){
   const cs=CARDS.filter(c=>c.k===k);
   return cs.length?cs.reduce((a,c)=>a+st(c.id).lvl,0)/(cs.length*MAX):0;
@@ -1110,7 +1111,7 @@ function statView(){
   });
   h+=`</table><div class="row"><button class="act ghost" id="clr">Nollställ all statistik</button></div>`;
   $('v-stat').innerHTML=h;
-  $('clr').onclick=()=>{stats={};phrasing={};streak=0;save();statView();regView();$('streak').textContent='0 i rad';};
+  $('clr').onclick=()=>{stats={};phrasing={};streak=0;if(typeof molnTvinga==='function')molnTvinga();save();statView();regView();$('streak').textContent='0 i rad';};
 }
 
 function regView(){
@@ -1386,7 +1387,7 @@ const GLOSOR=[
 /* ===== Språk: glosor (svenska # tyska, alternativ skiljs med ;) ===== */
 const GSET_KEY='glosor-set'+(PROFIL?':'+PROFIL:'');
 function gSet(){try{return Object.assign({nara:true,rikt:'sv',live:true,tal:true},JSON.parse(localStorage.getItem(GSET_KEY)||'{}'));}catch(e){return {nara:true,rikt:'sv',live:true,tal:true};}}
-function gSpara(x){try{localStorage.setItem(GSET_KEY,JSON.stringify(x));}catch(e){}}
+function gSpara(x){try{localStorage.setItem(GSET_KEY,JSON.stringify(x));}catch(e){}if(typeof molnPush==='function')molnPush();}
 function gDela(t){return t.split(';').map(x=>x.trim()).filter(Boolean);}
 function gAlla(){const o=[];GLOSOR.forEach((g,gi)=>g.rader.forEach((r,i)=>{const p=r.split('#');o.push({id:gi+'-'+i,g:gi,sv:gDela(p[0]),de:gDela(p[1])});}));return o;}
 function gBland(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -1546,12 +1547,12 @@ function profImport(fil){
 function profMsg(t){const m=$('profMsg');if(m){m.textContent=t;m.style.display='block';}}
 function profRita(){
   const l=profLista();
-  $('profrad').innerHTML=`Profil: <b style="color:#fff">${esc(profNamn())}</b> · <a href="#" id="profOppna" style="color:#C9D2F0">byt eller spara</a>`;
+  $('profrad').innerHTML=`Profil: <b style="color:#fff">${esc(profNamn())}</b> · <a href="#" id="profOppna" style="color:#C9D2F0">byt eller spara</a><span id="molnStatus" style="margin-left:8px"></span>`;
   $('profOppna').onclick=e=>{e.preventDefault();const p=$('profpanel');p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')profPanel();};
 }
 function profPanel(){
   const l=profLista();
-  $('profpanel').innerHTML=`<p class="q" style="font-size:18px;margin-bottom:8px">Profiler</p>
+  $('profpanel').innerHTML=`<div id="kontoBox"></div><p class="q" style="font-size:18px;margin-bottom:8px">Profiler</p>
   <p style="margin:0 0 10px;font-size:12px;color:#6A6558;line-height:1.5">Varje profil har sin egen progress i den här webbläsaren. Din vanliga progress ligger kvar i <b>Min profil</b>. Spara den som en fil för att flytta den till en annan enhet eller ha en säkerhetskopia.</p>
   ${l.map(p=>`<div class="amne" style="cursor:default"><span class="an">${esc(p.namn)}${p.id===PROFIL?' <span class="rek">aktiv</span>':''}</span>
     ${p.id!==PROFIL?`<button class="act ghost" data-byt="${esc(p.id)}" style="padding:5px 12px">Byt</button>`:''}
@@ -1560,6 +1561,7 @@ function profPanel(){
   <div class="row"><button class="act ghost" id="profEx">Spara progress som fil</button><button class="act ghost" id="profIm">Ladda in fil</button></div>
   <input type="file" id="profFil" accept="application/json,.json" style="display:none">
   <div id="profMsg" class="err" style="display:none"></div>`;
+  if(typeof kontoRita==='function')kontoRita();
   $('profpanel').querySelectorAll('[data-byt]').forEach(b=>b.onclick=()=>profByt(b.getAttribute('data-byt')));
   $('profpanel').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const id=b.getAttribute('data-del');
     if(!confirm('Ta bort profilen och dess progress? Det går inte att ångra (spara en fil först).'))return;
@@ -1826,6 +1828,7 @@ setMode(localStorage.getItem('flod-mode')==='sprak'?'sprak':'plugga');
 if(!harValtAmnen())visaAmnesval();
 laddaPool().then(poolKlar);
 </script>
+<script src="konto.js"></script>
 
 </body>
 </html>

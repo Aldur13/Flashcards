@@ -15,6 +15,7 @@ server — den fungerar direkt i webbläsaren.
 - **Statistik** — hur stor del av materialet du kan, per område.
 - **Register** — de frågor du svarat fel på, samlade för repetition.
 - **AI** — vilken tjänst och nyckel som används.
+- **Konto** (valfritt) — spara progressen i molnet och använd den på flera enheter. Se *Konton och molnprogress* längst ner.
 
 Områdena är Jordbruksrevolutionen, Högkulturer, Historiska begrepp, Antikens
 världar, Sumererna, Babylonien och Assyrien, Fenicierna, Judarna, Egypten och
@@ -36,7 +37,7 @@ ovanför frågan (*Egypten · byt*).
 Rättningen blir strängare ju bättre du kan en fråga (fem nivåer), och från
 nivå 2 formuleras frågan om så att man inte kan lära sig facit utantill.
 Allt du gjort sparas i din egen webbläsare — inget skickas till någon server
-utom själva AI-tjänsten.
+utom själva AI-tjänsten (och, om du själv väljer att logga in, din progress till ditt konto i molnet).
 
 ### Två namn på samma sak
 
@@ -213,3 +214,50 @@ befintlig progress ligger kvar. Progress kan sparas som JSON-fil och laddas in s
 visas som ren text. Meddelanden begränsas i storlek, typ och antal (ett svar per spelare och runda). Svaren
 behandlas som data i prompten, så uppmaningar i ett svar ger 1 poäng. Spelare kan bara gå med innan spelet startar,
 och värden kan ta bort spelare.
+
+## Konton och molnprogress (steg 1)
+
+Ett konto är **valfritt** och ersätter inte något: appen fungerar precis som förut utan inloggning. Med ett konto
+sparas progressen också i molnet (Supabase), så att man kan fortsätta på en annan enhet. Allt ligger i `konto.js`
+(en egen liten klient, ingen extern kod) och `supabase/setup.sql`. Saknas `konto.js` fungerar appen ändå.
+
+**Så fungerar det**
+- Varje konto får en egen lokal profil, `u` + 10 tecken. **Min profil rörs aldrig av sig själv.** Gammal progress
+  flyttas in med knappen *Flytta in progress från Min profil* (den slår ihop, den skriver inte över).
+- Synken sker några sekunder efter varje ändring, och när sidan öppnas. Den slår ihop **per fråga** med hjälp av tre
+  lägen: den här enheten, molnet och senast synkade läget. Är bara en sida ändrad vinner den. Har båda ändrat samma
+  fråga behålls den där du övat mest (`ratt + fel`). Rätta svar går alltså aldrig förlorade, och en nollställning
+  (som tvingar molnet) och en överklagan som sänker en nivå fungerar också.
+- Skrivningen till molnet är villkorad på radens `updated_at`. Har en annan enhet hunnit ändra emellan görs en ny runda.
+- Allt som kommer från molnet rensas innan det används: bara frågenummer som siffror, heltal inom gränser, korta
+  texter, inga okända fält. Tomma poster (0/0/0) räknas som "ingen post".
+- Utloggning sparar först och tar sedan bort kontots lokala kopia, så att inget ligger kvar på en delad dator.
+  Kan inte molnet nås frågar appen innan den loggar ut.
+- Radera konto tar bort e-post, inloggning och molnprogress för gott (`delete_my_account()` i databasen).
+
+**Det här behöver göras en gång i Supabase** (Dashboard för projektet `cicxvhjydsmgnysbkjlu`)
+1. **SQL Editor** → klistra in hela `supabase/setup.sql` → *Run*. Det går bra att köra igen.
+2. **Authentication → URL Configuration**: *Site URL* = `https://aldur13.github.io/Flashcards` och samma adress under
+   *Redirect URLs*.
+3. **Authentication → Sign In / Providers → Email**: *Minimum password length* = 10.
+4. **Bekräfta e-post och mejlutskick, läs det här innan du bjuder in vänner:** Supabases inbyggda mejltjänst är bara
+   till för test. Den skickar **bara till adresser som tillhör projektets organisation** och har en mycket låg gräns
+   per timme. Vänner som skapar konto får alltså inget bekräftelsemejl, och inte heller något mejl för glömt
+   lösenord. Det går att lösa med egen SMTP (Authentication → Emails → SMTP Settings, till exempel Brevo eller
+   Resend, som har gratisnivåer). Lägg **inte** till vänner som medlemmar i organisationen för att komma runt det:
+   medlemmar kommer åt hela projektet, inklusive databasen. Att stänga av *Confirm email* gör att inget mejl behövs
+   för att skapa konto, men då bekräftas aldrig att adressen är äkta, och glömt lösenord fungerar fortfarande inte.
+
+**Säkerhet och integritet**
+- Nyckeln i `konto.js` är Supabase **publishable key**. Den är gjord för att ligga öppen i webbläsaren. Det som skyddar
+  datan är radnivåsäkerheten (RLS) i `setup.sql`: bara den egna raden går att läsa och skriva, och den som inte är
+  inloggad (`anon`) har inga rättigheter alls. Secret-nyckeln, `service_role` och databaslösenordet ska **aldrig**
+  in i koden eller i en chatt.
+- Inloggningsuppgifterna (en session) ligger i webbläsarens `localStorage`, som all annan progress. All text från
+  molnet och från konton visas som ren text.
+- Appen sparar e-postadresser (även vänners). En vuxen bör titta över Supabase-projektet och hur adresserna hanteras.
+- GitHub-tokens som klistrats in i chattar ska raderas på github.com/settings/tokens. Nästa push kräver en ny
+  *fine-grained* token: bara repot `Flashcards`, *Contents: read and write*, giltig en dag.
+
+**Senare steg:** uppladdning av frågepaket som JSON (med validering och privata paket), därefter AI-anrop via en
+serverfunktion och Supabase Realtime för Tävla.
