@@ -84,7 +84,7 @@ v4.3 lägger till en valfri domarpanel under **Plugga → AI**. Den vanliga AI-i
 - Resultatvyn visar hur många domare som svarade, om de var oense och om överdomaren användes.
 - Om inga extra domare är konfigurerade används den vanliga rättningen.
 
-Extra nycklar sparas i värdens webbläsares `localStorage`, inte i `keys.json`, GitHub eller matchhistoriken. De skickas till respektive AI-leverantör och delas inte med spelarna. SambaNova går via en egen Supabase Edge Function eftersom leverantören inte tillåter direkta webbläsaranrop med CORS. Nyckeln skickas till funktionen i anropet och vidarebefordras till SambaNova; funktionen sparar eller loggar den inte. Den som har åtkomst till värdens webbläsare kan dock komma åt lokalt sparade nycklar. Använd bara API-nycklar du har tillåtelse att använda och kontrollera leverantörens eventuella kostnader och gränser.
+Extra domarnycklar kan sparas i webbläsaren om man inte använder kontots nyckelvalv. Med nyckelvalvet (se nedan) hämtas domarnycklar från det inloggade kontot och används bara av värdens webbläsare. De skickas aldrig till spelarna eller matchhistoriken. SambaNova går via en egen Supabase Edge Function. Använd bara API-nycklar du har tillåtelse att använda och kontrollera leverantörens eventuella kostnader och gränser.
 
 ### Aktivera SambaNova-proxyn
 
@@ -248,6 +248,22 @@ eller en modell man kör själv (Ollama, LM Studio).
 - Under **Sparade nycklar** syns vilka som ligger sparade (maskerade) och när,
   med en **Ta bort**-knapp för varje.
 - Nyckeln lämnar aldrig webbläsaren annat än till den tjänst man valt.
+
+
+### API-nycklar kopplade till kontot (krypterat nyckelvalv)
+
+Under **Plugga → AI → API-nycklar på kontot** kan du spara upp till tre nycklar per leverantör och upp till två extra AI-domare. Den första nyckeln för en leverantör används först; om leverantören avvisar den eller kontot når en kvot provas nästa nyckel. Välj **Egen nyckel** under AI-inställningarna för att använda kontots huvudnyckel. Extra domare från kontot används i Tävla när du startar en match.
+
+**Engångsinställning i Supabase-projektet** (cicxvhjydsmgnysbkjlu):
+
+1. Kör först supabase/setup.sql om kontot/progressen inte redan är uppsatt. Kör sedan hela supabase/api-keys-vault.sql i Supabase SQL Editor.
+2. Öppna Project Settings → Edge Functions → Secrets och lägg till FLASHCARDS_VAULT_KEY. Skapa ett separat slumpmässigt värde lokalt, till exempel med kommandot openssl rand -base64 48. Värdet måste vara minst 32 tecken. Spara det direkt i Supabase; lägg det aldrig i GitHub, webbappen eller en chatt.
+3. GitHub Actions publicerar funktionen api-keys-vault automatiskt när dess kod ändras. Den använder projektets befintliga SUPABASE_ACCESS_TOKEN-secret.
+4. Logga in på Flashcards, byt till kontoprofilen under Profil, öppna Plugga → AI och tryck Hämta från konto / synka. Lägg sedan in nycklarna och spara.
+
+**Säkerhetsmodell:** webbläsaren skickar nyckelvalvet till en Supabase Edge Function med den inloggade användarens session. Funktionen verifierar sessionen och krypterar hela valvet med AES-256-GCM innan det skrivs till databasen. Krypteringsnyckeln ligger bara som Supabase Function Secret. Databastabellen har RLS aktiverat utan klientpolicyer och klientrollerna har inga tabellrättigheter; endast Edge Functionens service-roll kan läsa eller skriva ciphertext. Funktionen dekrypterar bara efter att användarens session har verifierats. Nycklarna måste ändå skickas till respektive AI-leverantör när du använder tjänsten, och den som har tillgång till en inloggad webbläsare kan använda nycklarna där. Radera nycklar du inte längre använder och skydda kontot.
+
+Om FLASHCARDS_VAULT_KEY saknas eller byts ut går det inte att läsa redan sparade nycklar. Behåll samma hemliga värde säkert och skapa en säkerhetskopia utanför repot.
 
 ### När en nyckel inte fungerar
 
