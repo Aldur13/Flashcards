@@ -8,6 +8,7 @@
   let loaded = false;
   let loading = false;
   let attempted = false;
+  let requestGeneration = 0;
   let activeKeyOverride = null;
   const safeText = value => String(value == null ? '' : value).slice(0, 160);
   const attr = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
@@ -50,8 +51,10 @@
     if (loading) return false;
     loading = true;
     attempted = true;
+    const generation = ++requestGeneration;
     try {
       const result = await request('get');
+      if (generation !== requestGeneration || !accountReady()) return false;
       vault = normalize(result.vault);
       loaded = true;
       window.FLASHCARDS_ACCOUNT_VAULT = vault;
@@ -61,18 +64,21 @@
       showMessage('Nyckelvalvet är synkat med ditt konto.', true);
       return true;
     } catch (error) {
+      if (generation !== requestGeneration) return false;
       loaded = false;
       window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE = false;
       showMessage(error.message || 'Kunde inte läsa nyckelvalvet.', false);
       return false;
     } finally {
-      loading = false;
+      if (generation === requestGeneration) loading = false;
     }
   }
   async function saveVault() {
     if (!loaded) throw new Error('Läs in nyckelvalvet från kontot först.');
     const cleaned = normalize(vault);
+    const generation = requestGeneration;
     await request('save', { vault: cleaned });
+    if (generation !== requestGeneration || !accountReady()) return;
     vault = cleaned;
     window.FLASHCARDS_ACCOUNT_VAULT = vault;
     window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE = true;
@@ -81,6 +87,7 @@
     showMessage('Sparat krypterat på ditt konto.', true);
   }
   window.flashcardsAccountVaultClear = function () {
+    requestGeneration++;
     loaded = false;
     loading = false;
     attempted = false;
