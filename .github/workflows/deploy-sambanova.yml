@@ -17,13 +17,23 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Supabase Edge Function
+      - uses: actions/checkout@v5
+      - name: Validate Supabase access token
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::warning::SUPABASE_ACCESS_TOKEN is not configured. Add it under Settings > Secrets and variables > Actions, then run this workflow again."
-            exit 0
+            echo "::error::Missing SUPABASE_ACCESS_TOKEN. Create a Supabase Personal Access Token (format sbp_...) and save it as a GitHub Actions repository secret."
+            exit 1
           fi
-          npx --yes supabase@latest functions deploy sambanova-proxy --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt
+          case "$SUPABASE_ACCESS_TOKEN" in
+            sbp_*) echo "Supabase token format looks valid." ;;
+            *)
+              echo "::error::SUPABASE_ACCESS_TOKEN has the wrong format. The Supabase CLI expects a Personal Access Token beginning with sbp_. Create one in Supabase Account > Access Tokens, replace the GitHub Actions secret, and rerun this workflow."
+              exit 1
+              ;;
+          esac
+      - name: Deploy Supabase Edge Function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: npx --yes supabase@latest functions deploy sambanova-proxy --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt
