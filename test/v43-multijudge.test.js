@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const addon = fs.readFileSync(path.join(root, 'flashcards-v43-multijudge.js'), 'utf8');
+const accountKeys = fs.readFileSync(path.join(root, 'flashcards-account-keys.js'), 'utf8');
 
 function gradeRaw(score, id = 'p1') {
   return JSON.stringify({
@@ -127,7 +128,12 @@ test('the page loads scripts in safe order and all JavaScript sources parse', ()
   assert.ok(app.includes('err.retryAfterMs=retryAfterMs'));
   assert.ok(app.includes('poolDodMarkera(e.id,err.message,true,err.retryAfterMs||30000)'));
   assert.ok(app.includes('apiPool(prompt,null,true,options,entry?[entry.key]:[])'));
+  assert.ok(app.includes('accountVaultBackup(prompt,options,entry?[entry.key]:[],[])'));
+  assert.match(accountKeys, /window\.flashcardsAccountBackup = async function/);
+  assert.match(accountKeys, /activeProviderOverride = provider/);
+  assert.match(accountKeys, /status >= 500/);
   new vm.Script(addon);
+  new vm.Script(accountKeys);
   for (const match of app.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
     const source = match[1].trim();
     if (source) new vm.Script(source);

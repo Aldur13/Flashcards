@@ -103,6 +103,12 @@
     return true;
   };
 
+  let activeProviderOverride = null;
+  const baseGetProv = getProv;
+  getProv = function () {
+    return activeProviderOverride || baseGetProv();
+  };
+
   const baseGetKey = getKey;
   getKey = function () {
     if (activeKeyOverride) return activeKeyOverride;
@@ -132,6 +138,50 @@
 
   // Retry authentication/quota failures with the next private key for this provider.
   const baseApi = api;
+  window.flashcardsAccountBackup = async function (prompt, extra, excludeKeys, excludeProviders) {
+    if (!loaded || !window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE) {
+      throw new Error('Kontots nyckelvalv är inte synkat.');
+    }
+    const excludedKeys = new Set((excludeKeys || []).filter(key => typeof key === 'string' && key));
+    const excludedProviders = new Set((excludeProviders || []).filter(provider => typeof provider === 'string'));
+    const preferred = egenProv();
+    const order = [preferred].concat(PROVIDERS.filter(provider => provider !== preferred));
+    const candidates = [];
+    const seen = new Set();
+    order.forEach(provider => {
+      if (excludedProviders.has(provider)) return;
+      rowsFor(provider).forEach(row => {
+        if (!row || !row.key || excludedKeys.has(row.key) || seen.has(row.key)) return;
+        seen.add(row.key);
+        candidates.push({ provider, row });
+      });
+    });
+    if (!candidates.length) throw new Error('Inga alternativa API-nycklar finns i kontots nyckelvalv.');
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      const provider = candidate.provider;
+      const row = candidate.row;
+      const config = PROV[provider];
+      const model = row.model || config.starkast || config.stark || config.snabb || config.modeller[0];
+      activeProviderOverride = provider;
+      activeKeyOverride = row.key;
+      try {
+        return await baseApi(prompt, model, null, extra || {});
+      } catch (error) {
+        lastError = error;
+        const status = Number(error && error.status) || 0;
+        const recoverable = !!(error && (error.timeout || error.network)) ||
+          [401, 402, 403, 404, 408, 429].includes(status) || status >= 500;
+        if (!recoverable) throw error;
+      } finally {
+        activeKeyOverride = null;
+        activeProviderOverride = null;
+      }
+    }
+    throw lastError || new Error('Ingen reservnyckel i kontot fungerade.');
+  };
+
   api = async function (prompt, modelOverride, entry, extra) {
     if (entry || !loaded || !window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE || getSource() === 'delad') {
       return baseApi(prompt, modelOverride, entry, extra);
@@ -145,7 +195,9 @@
         return await baseApi(prompt, modelOverride, entry, extra);
       } catch (error) {
         lastError = error;
-        if (![401, 402, 403, 404, 429].includes(Number(error && error.status))) throw error;
+        const status = Number(error && error.status) || 0;
+        if (!(error && (error.timeout || error.network)) &&
+            ![401, 402, 403, 404, 408, 429].includes(status) && status < 500) throw error;
       } finally {
         activeKeyOverride = null;
       }

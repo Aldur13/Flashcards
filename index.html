@@ -872,18 +872,40 @@ async function apiWithMistralFallback(prompt,model,entry,extra){
 }
 async function apiJudge(prompt,entry,model,extra){
   const options={...(extra||{}),json:true};
-  if(!entry&&getSource()==='delad')return apiPool(prompt,model,true,options);
+  if(!entry&&getSource()==='delad'){
+    try{
+      return await apiPool(prompt,model,true,options);
+    }catch(error){
+      if(!shouldUseSharedFallback(error))throw error;
+      try{
+        const backup=await accountVaultBackup(prompt,options,poolOrdning().map(x=>x.key),[]);
+        if(backup!=null)return backup;
+      }catch(backupError){
+        error.backupError=backupError&&backupError.message?backupError.message:'Kontots reservnycklar svarade inte.';
+      }
+      throw error;
+    }
+  }
   try{
     return await apiWithMistralFallback(prompt,model,entry,options);
   }catch(error){
-    if(!shouldUseSharedFallback(error)||!harDelad())throw error;
+    if(!shouldUseSharedFallback(error))throw error;
+    const failures=[];
     try{
-      // Do not retry the failed extra judge's exact key.
-      return await apiPool(prompt,null,true,options,entry?[entry.key]:[]);
+      const backup=await accountVaultBackup(prompt,options,entry?[entry.key]:[],[]);
+      if(backup!=null)return backup;
     }catch(backupError){
-      error.backupError=backupError&&backupError.message?backupError.message:'Ingen reservdomare kunde svara.';
-      throw error;
+      failures.push(backupError&&backupError.message?backupError.message:'Kontots reservnycklar svarade inte.');
     }
+    if(harDelad()){
+      try{
+        return await apiPool(prompt,null,true,options,entry?[entry.key]:[]);
+      }catch(backupError){
+        failures.push(backupError&&backupError.message?backupError.message:'Delade reservnycklar svarade inte.');
+      }
+    }
+    if(failures.length)error.backupError=failures.join(' | ');
+    throw error;
   }
 }
 
@@ -928,20 +950,46 @@ function shouldUseSharedFallback(error){
   return !!(error.nyckelfel||error.timeout||error.network||
     status===402||status===403||status===404||status===408||status===429||status>=500);
 }
+async function accountVaultBackup(prompt,extra,excludeKeys,excludeProviders){
+  if(typeof window==='undefined'||typeof window.flashcardsAccountBackup!=='function')return null;
+  return window.flashcardsAccountBackup(prompt,extra||{},excludeKeys||[],excludeProviders||[]);
+}
 
 let delatFallback=false;
 async function callAI(prompt,model,starkast){
-  if(getSource()==='delad')return apiPool(prompt,model,starkast);
+  if(getSource()==='delad'){
+    try{return await apiPool(prompt,model,starkast);}
+    catch(error){
+      if(!shouldUseSharedFallback(error))throw error;
+      try{
+        const backup=await accountVaultBackup(prompt,{},poolOrdning().map(x=>x.key),[]);
+        if(backup!=null){delatFallback=true;return backup;}
+      }catch(backupError){
+        error.backupError=backupError&&backupError.message?backupError.message:'Kontots reservnycklar svarade inte.';
+      }
+      throw error;
+    }
+  }
   try{ return await api(prompt,model); }
   catch(e){
-    if(shouldUseSharedFallback(e)&&harDelad()){
+    if(shouldUseSharedFallback(e)){
+      const failures=[];
       try{
-        const t=await apiPool(prompt,null,starkast);
-        delatFallback=true;
-        return t;
+        const backup=await accountVaultBackup(prompt,{},[],[getProv()]);
+        if(backup!=null){delatFallback=true;return backup;}
       }catch(backupError){
-        e.backupError=backupError&&backupError.message?backupError.message:'Ingen reservnyckel svarade.';
+        failures.push(backupError&&backupError.message?backupError.message:'Kontots reservnycklar svarade inte.');
       }
+      if(harDelad()){
+        try{
+          const t=await apiPool(prompt,null,starkast);
+          delatFallback=true;
+          return t;
+        }catch(backupError){
+          failures.push(backupError&&backupError.message?backupError.message:'Delade reservnycklar svarade inte.');
+        }
+      }
+      if(failures.length)e.backupError=failures.join(' | ');
     }
     throw e;
   }
