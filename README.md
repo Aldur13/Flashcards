@@ -6,8 +6,70 @@ vilka som behöver repeteras.
 
 **Sidan ligger här:** https://aldur13.github.io/Flashcards/
 
-Hela appen är en enda fil, `index.html`. Inget bygge, inga beroenden, ingen
-server — den fungerar direkt i webbläsaren.
+Appens gränssnitt är en statisk webbplats. Multiplayer använder PeerJS först och
+Supabase Realtime som reserv; konto och offentlig matchhistorik använder också
+Supabase. Ingen egen server behöver byggas eller drivas av projektägaren.
+
+## Version 4.1 – lärande, lagspel och åskådare
+
+Den här versionen lägger till ett separat `flashcards-v41.js` så att befintliga
+övnings- och konto-funktioner kan fortsätta användas utan att byggas om.
+
+- **Smartare övning:** schemalagd repetition, dagens utmaning, nivå/kunskapsöversikt,
+  märken, mörkt/ljust tema och ljudreglage.
+- **Egna frågeset:** AI kan skapa skrivfrågor, flervalsfrågor och sant/falskt från
+  anteckningar. Frågor kan exporteras och importeras som JSON.
+- **AI-förklaring:** efter rättning kan eleven be om en stegvis förklaring.
+- **Lagspelet:** 2v2, 4v4, 8v8 och 12v12. Varje lag har en gemensam svarsruta.
+  Medlemmarna kan redigera den, och varje lagmedlem måste godkänna den aktuella
+  versionen innan den låses. En ändring nollställer tidigare godkännanden.
+- **Åskådarläge:** en separat observatörsingång med spelkod och observatörsnamn.
+  Åskådare räknas inte som spelare och kan se svar som skrivs i realtid.
+- **Matchhistorik:** historiken sparas lokalt och kan publiceras anonymt med
+  frågor, svar, poäng och AI-feedback. Publicering kräver samtycke från värden
+  och alla spelare samt att värden är inloggad på ett konto.
+- **Versionsmärke:** `Flashcards v4.1` visas i nedre hörnet.
+
+### Aktivera offentlig matchhistorik
+
+1. Öppna Supabase Dashboard för projektet och välj **SQL Editor**.
+2. Kör filen `supabase/v4.1-match-history.sql`.
+3. Värden måste vara inloggad under **Konto** innan matchen avslutas för att
+   historiken ska kunna publiceras. Utan inloggning sparas den lokalt på värdens
+   enhet.
+4. Offentlig historik är frivillig: värden och varje spelare måste aktivt godkänna
+   publiceringen i lobbyn. Det går att spela utan att publicera; då stannar historiken
+   lokalt hos värden. Namn ersätts med deltagar- eller lagnamn och e-post, telefonnummer
+   och länkar filtreras bort. Skriv ändå aldrig privata uppgifter i ett svar.
+
+### Multiplayer – viktiga begränsningar
+
+- PeerJS är förstahandsanslutning och Supabase Realtime reserv. Båda kräver nät.
+  Värdens webbläsare är fortfarande matchens auktoritet och måste vara öppen.
+  Om värdens enhet eller flik stängs kan matchen inte fortsätta av sig själv.
+- Lagspelet kräver exakt antal spelare, inklusive värden: 4 för 2v2, 8 för 4v4,
+  16 för 8v8 och 24 för 12v12. Solo är fortfarande det vanliga individuella läget.
+  Lagets text synkas medan man skriver; om flera personer skriver på exakt samma
+  ställe samtidigt gäller den senaste synkade ändringen, inte teckenvis konfliktlösning.
+- Markeringen **Turneringsmatch** sparas i historiken. Den här versionen har
+  ännu inte ett automatiskt turneringsträd med grupper, semifinaler och final.
+- Åskådarläget är en separat roll, inte en separat e-post-/lösenordskontotyp.
+  Det använder en egen inloggningsvy med spelkod och observatörsnamn. Värden måste
+  aktivt slå på åskådare i lobbyn innan någon kan titta.
+- Matchhistorik är offentlig när den publiceras. Publicera bara när alla spelare
+  förstår detta och har samtyckt. Anonymisering kan inte garantera att fritext
+  aldrig innehåller ett personnamn eller annan identifierande detalj.
+- Funktionerna har fått statiska kodtester och transporttester, men inte ett
+  fullständigt test med många riktiga enheter och nätverk. Testa först med en
+  liten privat match innan en större tävling.
+
+
+### Paketet och GitHub-versionen
+
+Den här ZIP-filen är byggd från en sparad projektkopia i arbetsytan. Jag har inte
+kunnat verifiera att den är byte-för-byte samma som GitHub-committen `b9c24d7`.
+Jämför/behåll därför eventuella nyare ändringar i GitHub innan du skriver över
+hela projektmappen med ZIP-innehållet.
 
 ## Vad som finns i appen
 

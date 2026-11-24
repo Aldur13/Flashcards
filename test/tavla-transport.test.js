@@ -248,3 +248,51 @@ test('Supabase Realtime fallback lets a client send and receive game messages', 
   assert.equal(context.receivedClient.t, 'valkommen');
   assert.equal(vm.runInContext('T.rtJoined', context), true);
 });
+
+test('Supabase Realtime spectator join is separate and resumes with its observer token', () => {
+  const clock = fakeClock();
+  const channels = [];
+  const sent = [];
+  const client = {
+    channel() {
+      const handlers = {};
+      const channel = {
+        handlers,
+        statusHandler: null,
+        on(_kind, filter, fn) { handlers[filter.event] = fn; return this; },
+        subscribe(fn) { this.statusHandler = fn; fn('SUBSCRIBED'); return this; },
+        send(message) { sent.push(message); return Promise.resolve('ok'); }
+      };
+      channels.push(channel);
+      return channel;
+    },
+    removeChannel() { return Promise.resolve('ok'); }
+  };
+  const context = vm.createContext({
+    window: { FLASHCARDS_SUPABASE_CONFIG: { url: 'https://example.supabase.co', key: 'public-test-key' }, supabase: { createClient: () => client } },
+    console, Math, Date, JSON, Object, String, Array, Number,
+    crypto: { randomUUID: (() => { let n = 0; return () => 'observer-' + (++n); })() },
+    setTimeout: (fn, ms) => clock.setTimeout(fn, ms),
+    clearTimeout: id => clock.clearTimeout(id),
+    setInterval: (fn, ms) => clock.setInterval(fn, ms),
+    clearInterval: id => clock.clearInterval(id),
+    tHostData() {},
+    tKlientData: message => { context.receivedClient = message; },
+    tPanel: message => { context.panel = message; }
+  });
+  vm.runInContext('let T = null;', context);
+  const helpers = html.slice(html.indexOf('let T_SUPABASE_CLIENT=null;'), html.indexOf('function tPanel(h){'));
+  vm.runInContext(helpers, context);
+  vm.runInContext("const state={roll:'klient',kod:'ABCDE',namn:'Watcher',spectator:true,token:'',fas:'ansluter'}; T=state; tRealtimeJoin(state);", context);
+  assert.equal(sent[0].payload.message.t, 'spectate');
+
+  channels[0].handlers.game({ payload: { from: 'host', to: 'observer-1', message: { t: 'observerWelcome', token: 'observer-session-token' } } });
+  assert.equal(vm.runInContext('T.hasJoined', context), true);
+  assert.equal(vm.runInContext('T.token', context), 'observer-session-token');
+
+  channels[0].statusHandler('CHANNEL_ERROR');
+  clock.advance(1500);
+  assert.equal(channels.length, 2, 'fallback transport should resubscribe after a channel error');
+  assert.equal(sent.at(-1).payload.message.t, 'spectate-resume');
+  assert.equal(sent.at(-1).payload.message.token, 'observer-session-token');
+});

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test:tavla": "node --test tavla-transport.test.js"
+    "test:tavla": "node --test tavla-transport.test.js",
+    "test": "node --test tavla-transport.test.js v41-features.test.js"
   },
   "keywords": [],
   "author": "",

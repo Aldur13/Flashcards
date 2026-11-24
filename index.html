@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plugga med AI — historia och geografi</title>
+<title>Flashcards v4.1 — plugga och tävla</title>
 <meta name="description" content="Läxförhör i historia och geografi. Skriv svaren med egna ord, en AI rättar och håller reda på vad du kan.">
 <meta name="theme-color" content="#1B2A5B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B2A5B'/%3E%3Cpath d='M16 5 L27 27 H5 Z' fill='%23C08423'/%3E%3Cpath d='M5 27 h22' stroke='%23EFEBDF' stroke-width='2'/%3E%3C/svg%3E">
@@ -1585,7 +1585,7 @@ let T=null;
 function tNamn(s){return String(s||'').replace(/[\u0000-\u001f<>&"'`]/g,'').trim().slice(0,16);}
 function tKod(){return Array.from({length:5},()=>TK[Math.floor(Math.random()*TK.length)]).join('');}
 function tPeerOptions(){return {host:'0.peerjs.com',port:443,path:'/',secure:true,debug:1,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}],sdpSemantics:'unified-plan'}};}
-function tStang(){try{if(T){['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer','rtJoinTimer'].forEach(k=>{if(T[k])clearTimeout(T[k]);});if(T.timer)clearInterval(T.timer);if(T.rtJoinTimer)clearInterval(T.rtJoinTimer);if(T.rtChannel&&T.rtClient)tSupabaseClient()?.removeChannel(T.rtChannel);if(T.peer)T.peer.destroy();if(T.sp)Object.values(T.sp).forEach(s=>{if(s.bortTimer)clearTimeout(s.bortTimer);});}}catch(e){}T=null;}
+function tStang(){try{if(T){['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer','rtJoinTimer','rtReconnectTimer','rtHostReconnectTimer'].forEach(k=>{if(T[k])clearTimeout(T[k]);});if(T.timer)clearInterval(T.timer);if(T.rtJoinTimer)clearInterval(T.rtJoinTimer);if(T.rtChannel&&T.rtClient)tSupabaseClient()?.removeChannel(T.rtChannel);if(T.peer)T.peer.destroy();if(T.sp)Object.values(T.sp).forEach(s=>{if(s.bortTimer)clearTimeout(s.bortTimer);});if(T.spectators)Object.values(T.spectators).forEach(s=>{if(s.bortTimer)clearTimeout(s.bortTimer);});}}catch(e){}T=null;}
 let T_SUPABASE_CLIENT=null;
 function tSupabaseClient(){
   try{
@@ -1599,37 +1599,70 @@ function tRtNyttId(){try{return crypto.randomUUID();}catch(e){return 'c'+Math.ra
 function tRealtimeHost(state){
   const client=tSupabaseClient();if(!client)return false;
   try{
-    state.rtClient=client;state.rtClients={};
+    if(state.rtChannel&&state.rtClient){try{state.rtClient.removeChannel(state.rtChannel);}catch(e){}state.rtChannel=null;}
+    state.rtClient=client;state.rtClients=state.rtClients||{};
     const channel=client.channel('jkflash-'+state.kod,{config:{broadcast:{self:false}}});state.rtChannel=channel;
     channel.on('broadcast',{event:'game'},({payload})=>{
-      if(T!==state||!payload||payload.to!=='host'||typeof payload.from!=='string'||!payload.message)return;
+      if(T!==state||state.rtChannel!==channel||!payload||payload.to!=='host'||typeof payload.from!=='string'||!payload.message)return;
       let adapter=state.rtClients[payload.from];
       if(!adapter){
-        adapter={open:true,_rtId:payload.from,send:m=>{if(!adapter.open)return;try{channel.send({type:'broadcast',event:'game',payload:{from:'host',to:payload.from,message:m}});}catch(e){}},close:()=>{if(!adapter.open)return;adapter.open=false;tNer(adapter);}};
+        adapter={open:true,_rtId:payload.from,send:m=>{if(!adapter.open||!state.rtChannel)return;try{state.rtChannel.send({type:'broadcast',event:'game',payload:{from:'host',to:payload.from,message:m}});}catch(e){}},close:()=>{if(!adapter.open)return;adapter.open=false;tNer(adapter);}};
         state.rtClients[payload.from]=adapter;
       }
+      adapter.open=true;
       tHostData(adapter,payload.message);
-    }).subscribe(status=>{if(T!==state)return;state.rtReady=status==='SUBSCRIBED';if(state.rtReady&&state.fas==='lobby'&&!state.signalReady)tLobbyHost();});
+    }).subscribe(status=>{
+      if(T!==state||state.rtChannel!==channel)return;
+      if(status==='SUBSCRIBED'){
+        state.rtReady=true;state.rtHostAttempts=0;
+        if(state.rtHostReconnectTimer){clearTimeout(state.rtHostReconnectTimer);state.rtHostReconnectTimer=null;}
+        if(state.fas==='lobby'&&!state.signalReady)tLobbyHost();
+        return;
+      }
+      state.rtReady=false;
+      if(state.rtHostReconnectTimer)return;
+      state.rtHostAttempts=(state.rtHostAttempts||0)+1;
+      const delay=Math.min(1500*Math.pow(2,Math.min(4,state.rtHostAttempts-1)),20000);
+      state.rtHostReconnectTimer=setTimeout(()=>{
+        state.rtHostReconnectTimer=null;
+        if(T===state)tRealtimeHost(state);
+      },delay);
+    });
     return true;
   }catch(e){return false;}
 }
 function tRealtimeJoin(state){
   const client=tSupabaseClient();if(!client||T!==state)return false;
+  state.transport='realtime';
   if(state.peer){try{state.peer.destroy();}catch(e){}state.peer=null;}
-  ['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer'].forEach(k=>{if(state[k]){clearTimeout(state[k]);state[k]=null;}});state.retryPending=false;state.ateransluter=false;
+  const oldConn=state.conn;state.conn=null;if(oldConn){try{oldConn.close();}catch(e){}}
+  ['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer','rtJoinTimer','rtReconnectTimer'].forEach(k=>{if(state[k]){clearTimeout(state[k]);state[k]=null;}});
+  if(state.rtChannel&&state.rtClient){try{state.rtClient.removeChannel(state.rtChannel);}catch(e){}state.rtChannel=null;}
+  state.retryPending=false;state.ateransluter=false;state.hasJoined=false;state.rtJoined=false;
   try{
-    state.rtClient=client;state.rtClientId=tRtNyttId();state.transport='realtime';
+    state.rtClient=client;state.rtClientId=tRtNyttId();
     const channel=client.channel('jkflash-'+state.kod,{config:{broadcast:{self:false}}});state.rtChannel=channel;
     channel.on('broadcast',{event:'game'},({payload})=>{
-      if(T!==state||!payload||payload.to!==state.rtClientId||payload.from!=='host'||!payload.message)return;
+      if(T!==state||state.rtChannel!==channel||!payload||payload.to!==state.rtClientId||payload.from!=='host'||!payload.message)return;
       const m=payload.message;
-      if(m&&['valkommen','aterkommen'].includes(m.t)){state.hasJoined=true;state.rtJoined=true;state.retries=0;if(state.rtJoinTimer){clearInterval(state.rtJoinTimer);state.rtJoinTimer=null;}}
+      if(m&&['valkommen','aterkommen','observerWelcome'].includes(m.t)){state.hasJoined=true;state.rtJoined=true;if(m.t==='observerWelcome')state.token=String(m.token||'');state.retries=0;if(state.rtJoinTimer){clearInterval(state.rtJoinTimer);state.rtJoinTimer=null;}}
       tKlientData(m);
     }).subscribe(status=>{
-      if(T!==state||status!=='SUBSCRIBED')return;
+      if(T!==state||state.rtChannel!==channel)return;
+      if(status!=='SUBSCRIBED'){
+        state.rtReady=false;
+        if(state.conn){state.conn.open=false;state.conn=null;}
+        if(state.rtJoinTimer){clearInterval(state.rtJoinTimer);state.rtJoinTimer=null;}
+        if(state.rtReconnectTimer)return;
+        state.rtAttempts=(state.rtAttempts||0)+1;
+        const delay=Math.min(1500*Math.pow(2,Math.min(4,state.rtAttempts-1)),20000);
+        state.rtReconnectTimer=setTimeout(()=>{state.rtReconnectTimer=null;if(T===state)tRealtimeJoin(state);},delay);
+        return;
+      }
+      state.rtReady=true;state.rtAttempts=0;
       const conn={open:true,send:m=>{if(!conn.open)return;try{channel.send({type:'broadcast',event:'game',payload:{from:state.rtClientId,to:'host',message:m}});}catch(e){}},close:()=>{conn.open=false;}};
       state.conn=conn;state.ateransluter=false;
-      const join=()=>{if(T!==state||state.hasJoined||!conn.open)return;conn.send(state.token?{t:'resume',token:state.token}:{t:'join',namn:state.namn});};
+      const join=()=>{if(T!==state||state.hasJoined||!conn.open)return;const msg=state.spectator?(state.token?{t:'spectate-resume',token:state.token}:{t:'spectate',namn:state.namn}):(state.token?{t:'resume',token:state.token}:{t:'join',namn:state.namn,historyConsent:state.historyConsent===true});conn.send(msg);};
       join();state.rtJoinTimer=setInterval(join,1800);
       tPanel('<p class="q">Ansluten via reservsystem</p><p style="font-size:14px;color:#6A6558">Använder Supabase Realtime eftersom direktanslutningen inte fungerade.</p>');
     });
@@ -1714,18 +1747,18 @@ function tHostData(c,m){
     if(Object.keys(T.sp).length>=T.set.max)return avvisa('Spelet är fullt.');
     let n=tNamn(m.namn)||'Spelare';const b=n,tag=Object.values(T.sp).map(s=>s.namn);let i=2;while(tag.indexOf(n)>=0)n=b+' '+(i++);
     const id='p'+(++T.n),token=tKod()+tKod();c._id=id;
-    T.sp[id]={id,namn:n,conn:c,token};c.send({t:'valkommen',namn:n,token});
+    T.sp[id]={id,namn:n,conn:c,token,historyConsent:m.historyConsent===true};c.send({t:'valkommen',id,namn:n,token});
     tLobbyHost();return;
   }
   if(m.t==='resume'&&c._id&&T.sp[c._id]){
-    const s=T.sp[c._id];s.conn=c;s.frankopplad=false;try{c.send({t:'aterkommen',namn:s.namn});}catch(e){}tSkickaTill(c,tAktuellStatus(c));return;
+    const s=T.sp[c._id];s.conn=c;s.frankopplad=false;try{c.send({t:'aterkommen',id:s.id,namn:s.namn});}catch(e){}tSkickaTill(c,tAktuellStatus(c));return;
   }
   if(m.t==='resume'&&!c._id){
     const s=Object.values(T.sp).find(x=>x.id!=='h'&&x.token&&x.token===m.token);
     if(!s)return avvisa('Kunde inte återansluta. Gå med i ett nytt spel.');
     if(s.bortTimer)clearTimeout(s.bortTimer);
     s.conn=c;s.frankopplad=false;c._id=s.id;
-    try{c.send({t:'aterkommen',namn:s.namn});}catch(e){}
+    try{c.send({t:'aterkommen',id:s.id,namn:s.namn});}catch(e){}
     tSkickaTill(c,tAktuellStatus(c));return;
   }
   if(!c._id||!T.sp[c._id])return;
@@ -1773,7 +1806,7 @@ function tStart(){
 }
 function tNasta(){
   T.nr++;if(T.nr>T.fragor.length)return tSlutHost();
-  T.fas='runda';T.svar={};T.skickat=false;T.q=T.fragor[T.nr-1];T.slut=Date.now()+T.set.sek*1000;
+  T.fas='runda';T.svar={};T.skickat=false;T.liveDrafts={};if(T.teams)Object.values(T.teams).forEach(team=>{team.text='';team.approvals={};team.submitted=false;team.rev=(team.rev||0)+1;});T.q=T.fragor[T.nr-1];T.slut=Date.now()+T.set.sek*1000;
   tSand({t:'runda',nr:T.nr,tot:T.fragor.length,fraga:T.q.q,sek:T.set.sek});
   tRundaVy(T.nr,T.fragor.length,T.q.q);
 }
@@ -1910,7 +1943,7 @@ function tGaMed(){
 function tAnslut(kod,namn){
   tStang();tPanel('<p class="q">Ansluter…</p><p style="font-size:14px;color:#6A6558">Försöker först med PeerJS och växlar automatiskt till Supabase Realtime om det behövs.</p>');
   let peer=null;if(typeof Peer!=='undefined'){try{peer=new Peer(tPeerOptions());}catch(e){peer=null;}}
-  const state=T={roll:'klient',peer,kod,namn,fas:'ansluter',nr:0,skickat:false,timer:null,conn:null,token:'',aterForsok:0,ateransluter:false,signalReady:false,retryPending:false,retries:0,hasJoined:false,attemptId:0,connTimer:null,handshakeTimer:null,aterTimer:null,anslutTimeout:null,transport:'peerjs'};
+  const state=T={roll:'klient',spectator:typeof window!=='undefined'&&window.v41JoinRole==='spectator',historyConsent:typeof window!=='undefined'&&window.v41PendingConsent===true,peer,kod,namn,fas:'ansluter',nr:0,skickat:false,timer:null,conn:null,token:'',aterForsok:0,ateransluter:false,signalReady:false,retryPending:false,retries:0,hasJoined:false,attemptId:0,connTimer:null,handshakeTimer:null,aterTimer:null,anslutTimeout:null,transport:'peerjs'};
   if(!peer){if(!tRealtimeJoin(state))return tFel('PeerJS och Supabase Realtime är inte tillgängliga. Kontrollera nätverket.');return;}
   function stoppaTimer(){
     ['connTimer','handshakeTimer'].forEach(k=>{if(state[k]){clearTimeout(state[k]);state[k]=null;}});
@@ -1964,7 +1997,7 @@ function tAnslut(kod,namn){
       if(T!==state||attempt!==state.attemptId)return;
       if(state.connTimer){clearTimeout(state.connTimer);state.connTimer=null;}
       state.ateransluter=false;
-      try{if(state.token)c.send({t:'resume',token:state.token});else c.send({t:'join',namn});}
+      try{if(state.spectator)c.send({t:state.token?'spectate-resume':'spectate',namn,token:state.token||''});else if(state.token)c.send({t:'resume',token:state.token});else c.send({t:'join',namn,historyConsent:state.historyConsent===true});}
       catch(e){aterforsok('Kunde inte skicka anslutningsförfrågan.');return;}
       state.handshakeTimer=setTimeout(()=>{
         if(T===state&&state.conn===c&&!state.hasJoined)aterforsok('Värden bekräftade inte anslutningen.');
@@ -1972,10 +2005,10 @@ function tAnslut(kod,namn){
     });
     c.on('data',m=>{
       if(T!==state||attempt!==state.attemptId)return;
-      if(m&&['valkommen','aterkommen','lobby','runda','rattar','resultat','slut','avvisa'].includes(m.t)){
+      if(m&&['valkommen','aterkommen','observerWelcome','lobby','runda','rattar','resultat','slut','avvisa'].includes(m.t)){
         if(state.handshakeTimer){clearTimeout(state.handshakeTimer);state.handshakeTimer=null;}
       }
-      if(m&&(['valkommen','aterkommen'].includes(m.t))){state.hasJoined=true;state.retries=0;}
+      if(m&&(['valkommen','aterkommen','observerWelcome'].includes(m.t))){state.hasJoined=true;state.retries=0;if(m.t==='observerWelcome')state.token=String(m.token||'');}
       tKlientData(m);
     });
     c.on('error',e=>{if(T===state&&state.conn===c)aterforsok('WebRTC-anslutningen misslyckades.');});
@@ -2042,6 +2075,7 @@ if(!harValtAmnen())visaAmnesval();
 laddaPool().then(poolKlar);
 </script>
 <script src="konto.js"></script>
+<script src="flashcards-v41.js"></script>
 
 </body>
 </html>

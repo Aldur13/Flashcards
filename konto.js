@@ -654,6 +654,8 @@
     Object.keys(map).forEach(function (id) { var x = el(id); if (x) x.onclick = map[id]; });
   }
   window.kontoRita = kontoRita;
+  /* v4.1 match history: reuse the existing authenticated account session. */
+  window.flashcardsGetAccessToken = function () { return token(); };
 
   /* ── start ──────────────────────────────────────────────────────────────── */
   function rensaHash() {
