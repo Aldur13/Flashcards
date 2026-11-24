@@ -21,6 +21,7 @@
       }
     } catch (_) {}
     try { if (typeof getKey === 'function') { const k=getKey(); if (k) keys.push(k); } } catch (_) {}
+    try { if (typeof poolOrdning === 'function') poolOrdning().forEach(x => { if (x && x.key) keys.push(x.key); }); } catch (_) {}
     keys.forEach(key => { text = text.split(key).join('[API-nyckel dold]'); });
     return text.replace(/Bearer\s+\S+/gi, 'Bearer [dold]')
       .replace(/(api[_-]?key[=: ]+)[^\s,;]+/gi, '$1[dold]');
@@ -340,7 +341,7 @@
       providers:results.map(x => x.label), details
     };
     const finalResult = { betyg:scores, sok:results.some(x => !!x.result.sok) };
-    if (extras.length) finalResult.judgeMeta=lastMeta;
+    finalResult.judgeMeta=lastMeta;
     return finalResult;
   };
 
