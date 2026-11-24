@@ -173,6 +173,7 @@ th{font-weight:500;font-size:12px;color:#8A836F}
     <select id="prov" aria-label="AI-tjänst">
       <option value="groq">Groq — gratis</option>
       <option value="gemini">Google Gemini — gratis</option>
+      <option value="sambanova">SambaNova</option>
       <option value="kimi">Kimi (Moonshot AI)</option>
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI</option>
@@ -434,6 +435,10 @@ const PROV={
      {namn:'Balanserad (rekommenderad)', snabb:'openai/gpt-oss-20b', stark:'openai/gpt-oss-120b'},
      {namn:'Mest exakt', snabb:'openai/gpt-oss-120b', stark:'qwen/qwen3.6-27b'}
    ]},
+ sambanova:{namn:'SambaNova',url:'https://api.sambanova.ai/v1/chat/completions',shape:'openai',
+   modeller:['GLM-5.3','MiniMax-M3.1-Flash','gemma-4-31B-it','gpt-oss-120b'],
+   snabb:'GLM-5.3', stark:'gpt-oss-120b', starkast:'gpt-oss-120b',
+   hint:'SambaNova Cloud använder ett OpenAI-kompatibelt API. Skapa en nyckel i cloud.sambanova.ai. Tillgängliga modeller och eventuella gratiskvoter kan ändras.'},
  gemini:{namn:'Gemini',url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',shape:'openai',
    modeller:['gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-pro'],
    snabb:'gemini-2.5-flash', stark:'gemini-2.5-pro', starkast:'gemini-2.5-pro',
