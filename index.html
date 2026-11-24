@@ -614,7 +614,6 @@ function logDump(){
   if(!LOG.length)return'Inga anrop gjorda än.';
   return LOG.slice().reverse().map(l=>`[${l.t}] ${l.prov} · ${l.model}\nTid: ${l.durationMs==null?'—':l.durationMs+' ms'}\nURL: ${l.url}\nStatus: ${l.status}${l.retryAfterMs?'\nRetry-After: '+l.retryAfterMs+' ms':''}${l.error?'\nFEL: '+l.error:''}\n${l.snippet?'Svar: '+l.snippet:''}`).join('\n\n---\n\n');
 }
-}
 
 function felText(status,em,namn,model){
   const e=String(em||'');
