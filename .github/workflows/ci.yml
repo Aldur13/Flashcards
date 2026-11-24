@@ -29,10 +29,13 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check SambaNova Edge Function
-        run: deno check supabase/functions/sambanova-proxy/index.ts
+      - name: Type-check Supabase Edge Functions
+        run: |
+          deno check supabase/functions/sambanova-proxy/index.ts
+          deno check supabase/functions/api-keys-vault/index.ts
       - name: Check production JavaScript syntax
         run: |
           node --check flashcards-v41.js
           node --check flashcards-v42-resume.js
           node --check flashcards-v43-multijudge.js
+          node --check flashcards-account-keys.js
