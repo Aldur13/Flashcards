@@ -226,6 +226,9 @@
     return { betyg:scores, sok:results.some(x => !!x.result.sok), judgeMeta:lastMeta };
   };
 
+  const baseRattaRunda = rattaRunda;
+  rattaRunda = async function () { lastMeta = null; return baseRattaRunda(); };
+
   const baseSand = tSand;
   tSand = function (message) {
     if (message && message.t === 'resultat' && lastMeta) {
