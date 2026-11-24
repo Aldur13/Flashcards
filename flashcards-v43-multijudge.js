@@ -42,6 +42,12 @@
 
   function readJudges() {
     try {
+      if (typeof window !== 'undefined' && window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE &&
+          window.FLASHCARDS_ACCOUNT_VAULT && Array.isArray(window.FLASHCARDS_ACCOUNT_VAULT.judges)) {
+        return window.FLASHCARDS_ACCOUNT_VAULT.judges.filter(x => x && PROV[x.prov] && x.prov !== 'custom' &&
+          typeof x.key === 'string' && x.key.trim()).slice(0, 2)
+          .map(x => ({ prov:x.prov, key:x.key.trim(), model:String(x.model || '').trim() }));
+      }
       const value = JSON.parse(localStorage.getItem(STORAGE) || '[]');
       if (!Array.isArray(value)) return [];
       return value.filter(x => x && PROV[x.prov] && x.prov !== 'custom' &&
@@ -367,6 +373,7 @@
 
   // The settings panel may be hidden when the script loads, but it already exists.
   injectSettings();
+  window.flashcardsRenderJudges = renderRows;
   const observer = new MutationObserver(injectSettings);
   observer.observe(document.body, { childList:true, subtree:true });
 })();
