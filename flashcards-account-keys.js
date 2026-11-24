@@ -7,6 +7,7 @@
   let vault = emptyVault();
   let loaded = false;
   let loading = false;
+  let attempted = false;
   let activeKeyOverride = null;
   const safeText = value => String(value == null ? '' : value).slice(0, 160);
   const attr = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
@@ -48,6 +49,7 @@
   async function loadVault() {
     if (loading) return false;
     loading = true;
+    attempted = true;
     try {
       const result = await request('get');
       vault = normalize(result.vault);
@@ -80,6 +82,8 @@
   }
   window.flashcardsAccountVaultClear = function () {
     loaded = false;
+    loading = false;
+    attempted = false;
     vault = emptyVault();
     window.FLASHCARDS_ACCOUNT_VAULT = null;
     window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE = false;
@@ -237,15 +241,15 @@
       '<div class="row"><button class="act ghost" type="button" id="account-key-load">Hämta från konto / synka</button></div>' +
       '<div id="account-key-message" style="font-size:12px;margin:8px 0"></div><div id="account-key-content"></div>';
     panel.appendChild(box);
-    $('account-key-load').onclick = loadVault;
+    $('account-key-load').onclick = () => { attempted = false; loadVault(); };
     render();
-    if (accountReady()) loadVault();
+    if (accountReady() && !attempted) loadVault();
   }
 
   mount();
   const observer = new MutationObserver(() => {
     mount();
-    if (accountReady() && !loaded && !loading) loadVault();
+    if (accountReady() && !loaded && !loading && !attempted) loadVault();
     if (!accountReady() && loaded) window.flashcardsAccountVaultClear();
   });
   observer.observe(document.body, { childList: true, subtree: true });
