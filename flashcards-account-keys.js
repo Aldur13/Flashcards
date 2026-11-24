@@ -6,6 +6,7 @@
   const emptyVault = () => ({ version: 1, primary: {}, judges: [] });
   let vault = emptyVault();
   let loaded = false;
+  let loading = false;
   let activeKeyOverride = null;
   const safeText = value => String(value == null ? '' : value).slice(0, 160);
   const attr = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
@@ -45,6 +46,8 @@
     return result || {};
   }
   async function loadVault() {
+    if (loading) return false;
+    loading = true;
     try {
       const result = await request('get');
       vault = normalize(result.vault);
@@ -60,6 +63,8 @@
       window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE = false;
       showMessage(error.message || 'Kunde inte läsa nyckelvalvet.', false);
       return false;
+    } finally {
+      loading = false;
     }
   }
   async function saveVault() {
@@ -240,7 +245,7 @@
   mount();
   const observer = new MutationObserver(() => {
     mount();
-    if (accountReady() && !loaded) loadVault();
+    if (accountReady() && !loaded && !loading) loadVault();
     if (!accountReady() && loaded) window.flashcardsAccountVaultClear();
   });
   observer.observe(document.body, { childList: true, subtree: true });
