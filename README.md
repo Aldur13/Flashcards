@@ -73,6 +73,21 @@ Version 4.2 bygger vidare på funktionerna i v4.1 och lägger till ett separat `
 - v4.2-ändringarna har inte testats i en riktig match med flera enheter. Kör först en liten privat match innan en större tävling.
 
 
+## Version 4.3 – flera oberoende AI-domare i Tävla
+
+v4.3 lägger till en valfri domarpanel under **Plugga → AI**. Den vanliga AI-inställningen är fortfarande huvuddomare. Värden kan lägga till upp till två extra domare med varsin leverantör, API-nyckel och valfri modell.
+
+- Varje domare får samma fråga, facit och anonymiserade svar och bedömer oberoende av de andra.
+- Poängen sammanvägs med medianen, så en enskild avvikande bedömning får mindre genomslag.
+- Om domarnas poäng skiljer minst 20 poäng på något svar görs ett extra överdomaranrop som granskar svaren och de oberoende bedömningarna.
+- Om en extra domare misslyckas används de domare som svarade. Om ingen domare kan rätta visas det befintliga försöks-igen-flödet.
+- Resultatvyn visar hur många domare som svarade, om de var oense och om överdomaren användes.
+- Om inga extra domare är konfigurerade används den vanliga rättningen.
+
+Extra nycklar sparas i värdens webbläsares `localStorage`, inte i `keys.json`, GitHub eller matchhistoriken. De skickas direkt till respektive AI-leverantör och delas inte med spelarna. Den som har åtkomst till värdens webbläsare kan dock komma åt dem. Använd bara API-nycklar du har tillåtelse att använda och kontrollera leverantörens eventuella kostnader och gränser.
+
+**Viktigt:** AI-domare kan fortfarande göra misstag. Flera modeller är inte en garanti för korrekthet, särskilt om de bygger på liknande modeller eller samma felaktiga antaganden. Värden bör kunna granska resultat och använda överklagandefunktionen där den finns.
+
 ## Vad som finns i appen
 
 - **Öva** — 164 frågor i 19 områden. Den frågar oftare om det du är osäker på.
