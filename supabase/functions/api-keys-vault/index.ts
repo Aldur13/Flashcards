@@ -1,5 +1,3 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://aldur13.github.io",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -99,7 +97,7 @@ async function decrypt(uid: string, payload: Record<string, unknown>) {
   return cleanVault(JSON.parse(new TextDecoder().decode(plaintext)));
 }
 
-serve(async request => {
+Deno.serve(async request => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return response({ error: "Method not allowed" }, 405);
 
