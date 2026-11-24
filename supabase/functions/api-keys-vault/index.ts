@@ -140,7 +140,15 @@ Deno.serve(async request => {
 
     if (body.action === "get") {
       const stored = await fetch(rowUrl + "&select=encrypted_payload", { headers: restHeaders });
-      if (!stored.ok) return response({ error: "Kunde inte läsa nyckelvalvet." }, 502, origin);
+      if (!stored.ok) {
+        const detail = await stored.text();
+        let code = "";
+        try { code = JSON.parse(detail).code || ""; } catch (_) {}
+        if (code === "PGRST205" || code === "42P01" || stored.status === 404) {
+          return response({ error: "Databastabellen saknas. Kör supabase/api-keys-vault.sql i Supabase SQL Editor." }, 503, origin);
+        }
+        return response({ error: "Databasen avvisade läsningen av nyckelvalvet (HTTP " + stored.status + "). Kontrollera tabellrättigheter och Supabase-konfiguration." }, 503, origin);
+      }
       const rows = await stored.json();
       if (!Array.isArray(rows) || !rows.length) return response({ vault: { version: 1, primary: {}, judges: [] } }, 200, origin);
       return response({ vault: await decrypt(uid, rows[0].encrypted_payload) }, 200, origin);
@@ -154,7 +162,15 @@ Deno.serve(async request => {
         headers: { ...restHeaders, Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ user_id: uid, encrypted_payload }),
       });
-      if (!saved.ok) return response({ error: "Kunde inte spara nyckelvalvet." }, 502, origin);
+      if (!saved.ok) {
+        const detail = await saved.text();
+        let code = "";
+        try { code = JSON.parse(detail).code || ""; } catch (_) {}
+        if (code === "PGRST205" || code === "42P01" || saved.status === 404) {
+          return response({ error: "Databastabellen saknas. Kör supabase/api-keys-vault.sql i Supabase SQL Editor." }, 503, origin);
+        }
+        return response({ error: "Databasen avvisade sparningen av nyckelvalvet (HTTP " + saved.status + "). Kontrollera tabellrättigheter och Supabase-konfiguration." }, 503, origin);
+      }
       return response({ ok: true }, 200, origin);
     }
 
