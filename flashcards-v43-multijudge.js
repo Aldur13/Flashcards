@@ -247,7 +247,7 @@
       }
     }
 
-    primaryError = await runJudge(null, 'Domare 1 · huvuddomaren');
+    primaryError = await runJudge(null, 'Huvuddomaren');
     for (let i=0; i<extras.length; i++) {
       const entry=extras[i];
       await runJudge(entry, 'Domare ' + (i+2) + ' · ' + PROV[entry.prov].namn);
@@ -309,7 +309,9 @@
       range:disagreement, adjudicated,
       providers:results.map(x => x.label), details
     };
-    return { betyg:scores, sok:results.some(x => !!x.result.sok), judgeMeta:lastMeta };
+    const finalResult = { betyg:scores, sok:results.some(x => !!x.result.sok) };
+    if (extras.length) finalResult.judgeMeta=lastMeta;
+    return finalResult;
   };
 
   const baseRattaRunda = rattaRunda;
