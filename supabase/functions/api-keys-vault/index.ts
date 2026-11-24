@@ -1,9 +1,12 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://aldur13.github.io",
+function corsHeaders(origin: string) {
+  const allowed = origin === "https://aldur13.github.io" || origin.startsWith("http://localhost:");
+  return {
+  "Access-Control-Allow-Origin": allowed ? origin : "https://aldur13.github.io",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Vary": "Origin",
-};
+  };
+}
 
 const enc = new TextEncoder();
 const providers = new Set([
@@ -11,10 +14,10 @@ const providers = new Set([
   "openai", "mistral", "openrouter", "hf",
 ]);
 
-function response(body: unknown, status = 200) {
+function response(body: unknown, status = 200, origin = "https://aldur13.github.io") {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: { ...corsHeaders(origin), "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
@@ -98,12 +101,12 @@ async function decrypt(uid: string, payload: Record<string, unknown>) {
 }
 
 Deno.serve(async request => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const origin = request.headers.get("origin") || "https://aldur13.github.io";
+  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(origin) });
   if (request.method !== "POST") return response({ error: "Method not allowed" }, 405);
 
-  const origin = request.headers.get("origin") || "";
-  if (origin && origin !== "https://aldur13.github.io" && !origin.startsWith("http://localhost:")) {
-    return response({ error: "Origin not allowed" }, 403);
+  if (origin !== "https://aldur13.github.io" && !origin.startsWith("http://localhost:")) {
+    return response({ error: "Origin not allowed" }, 403, origin);
   }
 
   try {
@@ -113,19 +116,19 @@ Deno.serve(async request => {
     const authorization = request.headers.get("authorization") || "";
     const match = authorization.match(/^Bearer\s+(.+)$/i);
     if (!supabaseUrl || !anonKey || !serviceKey || !match) {
-      return response({ error: "Inloggning krävs." }, 401);
+      return response({ error: "Inloggning krävs." }, 401, origin);
     }
 
     const userResponse = await fetch(supabaseUrl + "/auth/v1/user", {
       headers: { apikey: anonKey, authorization: "Bearer " + match[1] },
     });
-    if (!userResponse.ok) return response({ error: "Sessionen är ogiltig. Logga in igen." }, 401);
+    if (!userResponse.ok) return response({ error: "Sessionen är ogiltig. Logga in igen." }, 401, origin);
     const user = await userResponse.json();
-    if (!user || typeof user.id !== "string") return response({ error: "Sessionen är ogiltig." }, 401);
+    if (!user || typeof user.id !== "string") return response({ error: "Sessionen är ogiltig." }, 401, origin);
     const uid = user.id;
 
     const raw = await request.text();
-    if (raw.length > 60000) return response({ error: "Begäran är för stor." }, 413);
+    if (raw.length > 60000) return response({ error: "Begäran är för stor." }, 413, origin);
     const body = JSON.parse(raw);
     const restHeaders = {
       apikey: serviceKey,
@@ -136,10 +139,10 @@ Deno.serve(async request => {
 
     if (body.action === "get") {
       const stored = await fetch(rowUrl + "&select=encrypted_payload", { headers: restHeaders });
-      if (!stored.ok) return response({ error: "Kunde inte läsa nyckelvalvet." }, 502);
+      if (!stored.ok) return response({ error: "Kunde inte läsa nyckelvalvet." }, 502, origin);
       const rows = await stored.json();
-      if (!Array.isArray(rows) || !rows.length) return response({ vault: { version: 1, primary: {}, judges: [] } });
-      return response({ vault: await decrypt(uid, rows[0].encrypted_payload) });
+      if (!Array.isArray(rows) || !rows.length) return response({ vault: { version: 1, primary: {}, judges: [] } }, 200, origin);
+      return response({ vault: await decrypt(uid, rows[0].encrypted_payload) }, 200, origin);
     }
 
     if (body.action === "save") {
@@ -150,19 +153,19 @@ Deno.serve(async request => {
         headers: { ...restHeaders, Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ user_id: uid, encrypted_payload }),
       });
-      if (!saved.ok) return response({ error: "Kunde inte spara nyckelvalvet." }, 502);
-      return response({ ok: true });
+      if (!saved.ok) return response({ error: "Kunde inte spara nyckelvalvet." }, 502, origin);
+      return response({ ok: true }, 200, origin);
     }
 
     if (body.action === "delete") {
       const deleted = await fetch(rowUrl, { method: "DELETE", headers: restHeaders });
-      if (!deleted.ok) return response({ error: "Kunde inte radera nyckelvalvet." }, 502);
+      if (!deleted.ok) return response({ error: "Kunde inte radera nyckelvalvet." }, 502, origin);
       return response({ ok: true });
     }
 
-    return response({ error: "Okänd åtgärd." }, 400);
+    return response({ error: "Okänd åtgärd." }, 400, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internt fel.";
-    return response({ error: message }, 400);
+    return response({ error: message }, 400, origin);
   }
 });
