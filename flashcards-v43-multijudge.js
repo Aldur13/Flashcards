@@ -145,9 +145,7 @@
     const cfg = PROV[activeJudge.prov];
     const model = activeJudge.model || cfg.starkast || cfg.stark || cfg.snabb || cfg.modeller[0];
     return {
-      text: await api(prompt, model, {
-        prov:activeJudge.prov, key:activeJudge.key, model
-      }, { maxTokens:3500 }),
+      text: await apiJudge(prompt, activeJudge, model, { maxTokens:3500 }),
       sok:false
     };
   };
@@ -222,12 +220,12 @@
       const started = Date.now();
       const logStart = (typeof LOG !== 'undefined' && Array.isArray(LOG)) ? LOG.length : 0;
       const model = judgeModel(entry);
-      activeJudge = entry;
+      activeJudge = entry ? { ...entry, model } : null;
       try {
         const result = await baseDomare(kort, deltar, sek);
         details.push({
           domare:label, leverantor:entry ? PROV[entry.prov].namn : 'Huvuddomaren',
-          modell:model, lyckades:true, tidMs:Date.now()-started,
+          modell:activeJudge ? activeJudge.model : model, lyckades:true, tidMs:Date.now()-started,
           api:apiLogSince(logStart)
         });
         results.push({ result, entry, label });
@@ -235,7 +233,7 @@
       } catch (e) {
         const failure = {
           domare:label, leverantor:entry ? PROV[entry.prov].namn : 'Huvuddomaren',
-          modell:model, lyckades:false, tidMs:Date.now()-started,
+          modell:activeJudge ? activeJudge.model : model, lyckades:false, tidMs:Date.now()-started,
           status:e && e.status != null ? e.status : '',
           fel:redactDiagnostic(e && e.message ? e.message : e || 'Okänt fel'),
           api:apiLogSince(logStart)
@@ -280,22 +278,19 @@
       const started=Date.now();
       const logStart=(typeof LOG !== 'undefined' && Array.isArray(LOG)) ? LOG.length : 0;
       try {
-        const raw = reviewer.entry
-          ? await api(adjudicatorPrompt(kort,deltar,results), model, {
-              prov:reviewer.entry.prov, key:reviewer.entry.key, model
-            }, {maxTokens:3500})
-          : await api(adjudicatorPrompt(kort,deltar,results), model, null, {maxTokens:3500});
+        const adjudicatorEntry=reviewer.entry ? { ...reviewer.entry, model } : null;
+        const raw = await apiJudge(adjudicatorPrompt(kort,deltar,results), adjudicatorEntry, model, {maxTokens:3500});
         scores = tParse(raw, ids);
         adjudicated = true;
         details.push({
           domare:'Överdomare', leverantor:reviewer.entry ? cfg.namn : 'Huvuddomarens tjänst',
-          modell:model, lyckades:true, tidMs:Date.now()-started,
+          modell:adjudicatorEntry ? adjudicatorEntry.model : model, lyckades:true, tidMs:Date.now()-started,
           api:apiLogSince(logStart)
         });
       } catch (e) {
         details.push({
           domare:'Överdomare', leverantor:reviewer.entry ? cfg.namn : 'Huvuddomarens tjänst',
-          modell:model, lyckades:false, tidMs:Date.now()-started,
+          modell:adjudicatorEntry ? adjudicatorEntry.model : model, lyckades:false, tidMs:Date.now()-started,
           status:e && e.status != null ? e.status : '',
           fel:redactDiagnostic(e && e.message ? e.message : e || 'Okänt fel'),
           api:apiLogSince(logStart)
