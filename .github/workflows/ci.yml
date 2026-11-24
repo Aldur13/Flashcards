@@ -1,0 +1,33 @@
+name: Flashcards tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: test/package-lock.json
+      - name: Install test dependencies
+        working-directory: test
+        run: npm ci
+      - name: Run transport, feature and multi-judge tests
+        working-directory: test
+        run: npm test
+      - name: Run account and storage regression tests
+        working-directory: test
+        run: npm run test:account
+      - name: Check production JavaScript syntax
+        run: |
+          node --check flashcards-v41.js
+          node --check flashcards-v42-resume.js
+          node --check flashcards-v43-multijudge.js
