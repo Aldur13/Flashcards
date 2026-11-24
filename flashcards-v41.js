@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '4.1';
+  const VERSION = '4.2';
   const LS_DAILY = 'flashcards-v41-daily';
   const LS_SETTINGS = 'flashcards-v41-settings';
   const LS_HISTORY = 'flashcards-v41-history';
@@ -192,7 +192,7 @@
     }else{
       T.liveDrafts=T.liveDrafts||{};T.liveDrafts[id]={name:T.sp&&T.sp[id]?T.sp[id].namn:(id==='h'?'Värd':'Spelare'),text};
     }
-    broadcastLive();
+    broadcastLive();persistProgressHistory(false);
   }
   function teamApprove(id){
     if(!T||T.fas!=='runda'||!T.teams)return;
@@ -203,7 +203,7 @@
     if(team.members.every(pid=>team.approvals[pid])){team.submitted=true;T.svar['team_'+teamId]=team.text;}
     tBroadcast({t:'team-sync',teamId,text:team.text,approved,memberCount:team.members.length,submitted:team.submitted,rev:team.rev||0});
     const mine=team.members.includes('h')&&T.playerTeams.h===teamId;if(mine){T.skickat=true;const b=$v('tLas'),ta=$v('tSvar');if(b){b.textContent=team.submitted?'Lagets svar är låst':`Godkänn lagets svar (${approved.length}/${team.members.length})`;b.disabled=!!team.submitted||!!team.approvals.h;}if(ta)ta.disabled=!!team.submitted;}
-    broadcastLive();
+    broadcastLive();persistProgressHistory(false);
     if(typeof tKollaKlar==='function')tKollaKlar();
   }
   function createTeams(){
@@ -216,10 +216,43 @@
     if(!T||!Array.isArray(T.historyRounds)||!m||!Array.isArray(m.rader))return;
     if(T.historyRounds.some(r=>r.nr===m.nr))return;
     T.historyRounds.push({nr:m.nr,question:String(m.fraga||'').slice(0,300),referenceAnswer:String(m.facit||'').slice(0,1500),webChecked:!!m.sok,timeoutIncomplete:!!m.timeoutIncomplete,answers:m.rader.map(r=>({name:String(r.namn||'').slice(0,24),answer:String(r.svar||'').slice(0,1200),score:Math.max(1,Math.min(100,+r.poang||1)),feedback:String(r.kommentar||'').slice(0,300),errors:String(r.fel||'').slice(0,300)}))});
+    persistProgressHistory(false);
   }
   function redactPublic(s){return String(s||'').slice(0,1200).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[e-post borttagen]').replace(/\+?\d[\d ()-]{8,}\d/g,m=>(m.match(/\d/g)||[]).length>=10?'[telefonnummer borttaget]':m).replace(/https?:\/\/\S+/gi,'[länk borttagen]');}
   function anonymizeRounds(rows){const aliases=new Map();return (rows||[]).map(r=>({nr:r.nr,question:redactPublic(r.question),referenceAnswer:redactPublic(r.referenceAnswer),webChecked:!!r.webChecked,timeoutIncomplete:!!r.timeoutIncomplete,answers:(r.answers||[]).map(a=>{const original=String(a.name||'');let name;if(/^Lag [AB]$/.test(original))name=original;else{if(!aliases.has(original))aliases.set(original,'Deltagare '+(aliases.size+1));name=aliases.get(original);}return {name,answer:redactPublic(a.answer),score:a.score,feedback:redactPublic(a.feedback),errors:redactPublic(a.errors)};})}));}
-  function localHistory(record){try{const a=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]');a.unshift(record);localStorage.setItem(LS_HISTORY,JSON.stringify(a.slice(0,25)));}catch(_){} }
+  let historyDbPromise=null;
+  function openLocalHistoryDb(){
+    if(historyDbPromise)return historyDbPromise;
+    historyDbPromise=new Promise((resolve,reject)=>{
+      if(!window.indexedDB){reject(new Error('IndexedDB saknas'));return;}
+      const request=indexedDB.open('flashcards-v42-history',1);
+      request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains('matches'))db.createObjectStore('matches',{keyPath:'matchId'});};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error('Kunde inte öppna historiklagret'));
+    });
+    return historyDbPromise;
+  }
+  function saveHistoryToIndexedDb(record){
+    if(!record||!record.matchId)return;
+    openLocalHistoryDb().then(db=>new Promise((resolve,reject)=>{
+      const tx=db.transaction('matches','readwrite');tx.objectStore('matches').put(record);
+      tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Historiken kunde inte sparas'));tx.onabort=()=>reject(tx.error||new Error('Historiksparningen avbröts'));
+    })).catch(()=>{});
+  }
+  function localHistory(record){
+    try{const a=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]');const id=record&&record.matchId;const index=id?a.findIndex(x=>x&&x.matchId===id):-1;if(index>=0)a[index]={...a[index],...record};else a.unshift(record);a.sort((x,y)=>String(y.updated_at||y.created_at||'').localeCompare(String(x.updated_at||x.created_at||'')));localStorage.setItem(LS_HISTORY,JSON.stringify(a.slice(0,25)));}catch(_){}
+    saveHistoryToIndexedDb(record);
+  }
+  function persistProgressHistory(completed){
+    if(!T||!Array.isArray(T.historyRounds)||!T.matchId)return;
+    const players=Object.values(T.sp||{}).filter(p=>p.id==='h'||p.token);
+    const labels={};let next=1;players.forEach(p=>{labels[p.id]=p.id==='h'?'Värd':'Deltagare '+(next++);});
+    let drafts=[];
+    if(T.format&&T.format!=='solo'&&T.teams){drafts=Object.keys(T.teams).map(id=>({name:TEAM_LABEL[id]||('Lag '+id),answer:String(T.teams[id].text||'').slice(0,1200)}));}
+    else{const snap=typeof liveDraftSnapshot==='function'?liveDraftSnapshot():(T.liveDrafts||{});drafts=Object.keys(snap||{}).map(id=>({name:labels[id]||'Deltagare',answer:String(snap[id]&&snap[id].text||'').slice(0,1200)}));}
+    const currentRound=!completed&&T.fas==='runda'&&T.q?{nr:T.nr,question:String(T.q.q||'').slice(0,300),drafts,submitted:Object.keys(T.svar||{}).length}:null;
+    localHistory({matchId:T.matchId,created_at:T.matchStartedAt||new Date().toISOString(),updated_at:new Date().toISOString(),completed:!!completed,format:T.format||'solo',tournament:!!(T.set&&T.set.tournament),players:players.map((p,i)=>({name:labels[p.id]||('Deltagare '+(i+1))})),rounds:anonymizeRounds(T.historyRounds),currentRound});
+  }
   async function authenticatedSupabase(){
     const client=typeof tSupabaseClient==='function'?tSupabaseClient():null;if(!client)return null;
     try{
@@ -234,7 +267,7 @@
     if(!T||!T.historyRounds||!T.historyRounds.length)return;
     const state=T;const players=Object.values(state.sp||{}).filter(p=>p.id==='h'||p.token);
     const consent=state.historyConsent===true&&players.every(p=>p.id==='h'?state.historyConsent===true:p.historyConsent===true);
-    const record={created_at:new Date().toISOString(),format:state.format||'solo',tournament:!!(state.set&&state.set.tournament),rounds:anonymizeRounds(state.historyRounds),players:players.map((p,i)=>({name:'Deltagare '+(i+1)}))};
+    const record={matchId:state.matchId||null,created_at:state.matchStartedAt||new Date().toISOString(),updated_at:new Date().toISOString(),completed:true,currentRound:null,format:state.format||'solo',tournament:!!(state.set&&state.set.tournament),rounds:anonymizeRounds(state.historyRounds),players:players.map((p,i)=>({name:'Deltagare '+(i+1)}))};
     localHistory(record);
     if(!consent){state.historyPublishStatus='Inte publicerad: alla deltagare gav inte samtycke.';return;}
     const client=await authenticatedSupabase();if(!client){state.historyPublishStatus='Sparad lokalt. Logga in på Konto som värd för att publicera historiken.';return;}
@@ -283,7 +316,7 @@
   // Host lobby consent and exact team capacity checks.
   if(typeof tLobbyHost==='function')tLobbyHost=function(){old.tLobbyHost();if(!T||T.roll!=='host')return;const panel=$v('modTavla').querySelector('.panel');if(!panel)return;const all=Object.values(T.sp||{}).filter(s=>s.id!=='h').every(s=>s.historyConsent===true);const players=tSpelare();const needed=T.format&&T.format!=='solo'?T.teamSize*2:2;const full=players.length>=needed&&(T.format==='solo'||players.length===needed);panel.insertAdjacentHTML('beforeend',`<div class="v41-card"><label style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><input id="v41-host-consent" type="checkbox" ${T.historyConsent?'checked':''} style="margin-top:3px">Jag godkänner att matchens svar och AI-bedömningar publiceras anonymt. Dela inte privata uppgifter.</label><p style="font-size:11px;margin:7px 0 0">${T.format&&T.format!=='solo'?h(T.format)+' kräver '+needed+' spelare. ':''}Samtycke till offentlig historik: ${all&&T.historyConsent?'alla har godkänt':'saknas – matchen kan spelas privat'}. </p><label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-top:8px"><input id="v41-allow-observers" type="checkbox" ${T.allowSpectators?'checked':''} style="margin-top:3px">Tillåt åskådare att se alla utkast live</label><p style="font-size:11px;margin:5px 0 0">${Object.keys(T.spectators||{}).length} observatörer tittar just nu. </p><p style="font-size:11px;margin:5px 0 0">Offentlig publicering kräver samtycke från alla, att värden är inloggad under Konto och att v4.1 SQL-migrationen har körts.</p></div>`);$v('v41-host-consent').onchange=()=>{T.historyConsent=$v('v41-host-consent').checked;tLobbyHost();};$v('v41-allow-observers').onchange=()=>{T.allowSpectators=$v('v41-allow-observers').checked;tLobbyHost();};const start=$v('tStart');if(start){start.disabled=!full;if(!full)start.textContent=players.length<needed?'Väntar på spelare…':'För många spelare';}};
 
-  if(typeof tStart==='function')tStart=function(){if(!T)return;const allPlayers=tSpelare();if(T.format&&T.format!=='solo'){const needed=T.teamSize*2;if(allPlayers.length!==needed){tLobbyHost();return;}createTeams();}else{T.playerTeams={};T.teams=null;T.liveDrafts={};}T.historyRounds=[];old.tStart();if(T&&T.format&&T.format!=='solo'){T.tot={team_A:{namn:'Lag A',summa:0,vinster:0},team_B:{namn:'Lag B',summa:0,vinster:0}};}};
+  if(typeof tStart==='function')tStart=function(){if(!T)return;Object.keys(T.sp||{}).forEach(id=>{const player=T.sp[id];if(id!=='h'&&(!player.conn||!player.conn.open)){if(player.bortTimer)clearTimeout(player.bortTimer);delete T.sp[id];}});const allPlayers=tSpelare();if(T.format&&T.format!=='solo'){const needed=T.teamSize*2;if(allPlayers.length!==needed){tLobbyHost();return;}createTeams();}else{T.playerTeams={};T.teams=null;T.liveDrafts={};}T.historyRounds=[];T.matchId=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);T.matchStartedAt=new Date().toISOString();old.tStart();if(T&&T.format&&T.format!=='solo'){T.tot={team_A:{namn:'Lag A',summa:0,vinster:0},team_B:{namn:'Lag B',summa:0,vinster:0}};}persistProgressHistory(false);};
 
   // The host is authoritative for every live edit and every approval.
   if(typeof tHostData==='function')tHostData=function(c,m){
@@ -296,12 +329,12 @@
       if(m.t==='team-edit'&&c._id&&T.fas==='runda'&&+m.nr===T.nr){const expected=T.playerTeams&&T.playerTeams[c._id];if(expected&&expected===m.teamId)updateDraft(c._id,m.text);return;}
       if(m.t==='team-approve'&&c._id&&T.fas==='runda'&&+m.nr===T.nr){if(T.playerTeams&&T.playerTeams[c._id]===m.teamId)teamApprove(c._id);return;}
     }
-    return old.tHostData(c,m);
+    const result=old.tHostData(c,m);if(m.t==='svar')persistProgressHistory(false);return result;
   };
 
   if(typeof tNer==='function')tNer=function(c){if(T&&c&&c._spectator&&T.spectators&&T.spectators[c._id]){const s=T.spectators[c._id];if(s.conn!==c)return;s.conn=null;if(s.bortTimer)clearTimeout(s.bortTimer);s.bortTimer=setTimeout(()=>{if(T&&T.spectators&&T.spectators[s.id]===s&&!s.conn)delete T.spectators[s.id];},90000);return;}return old.tNer(c);};
   if(typeof tAktuellStatus==='function')tAktuellStatus=function(c){const m=old.tAktuellStatus(c);if(m&&m.t==='runda'){if(T&&T.format&&T.format!=='solo'){const id=c&&c._id,teamId=T.playerTeams&&T.playerTeams[id],team=teamId&&T.teams&&T.teams[teamId];m.format=T.format;m.teamId=teamId||null;m.teamText=team?team.text:'';m.teamApprovals=team?Object.keys(team.approvals).length:0;m.teamMembers=team?team.members.length:0;m.teamApproved=team?!!team.approvals[id]:false;m.teamSubmitted=team?!!team.submitted:false;}m.drafts=liveDraftSnapshot();}return m;};
-  if(typeof tSand==='function')tSand=function(m){if(!T)return;if(m&&m.t==='resultat'){T.senasteResultat=m;appendRoundHistory(m);}return tBroadcast(m);};
+  if(typeof tSand==='function')tSand=function(m){if(!T)return;if(m&&m.t==='resultat'){T.senasteResultat=m;appendRoundHistory(m);}else if(m&&m.t==='runda'){persistProgressHistory(false);}else if(m&&m.t==='slut'){persistProgressHistory(true);}return tBroadcast(m);};
 
   if(typeof tRundaVy==='function')tRundaVy=function(nr,tot,fraga){old.tRundaVy(nr,tot,fraga);if(!T)return;const ta=$v('tSvar'),btn=$v('tLas');if(!ta||!btn)return;T.liveDrafts=T.liveDrafts||{};
     if(T.format&&T.format!=='solo'){
@@ -387,6 +420,17 @@
     try{const c=typeof tSupabaseClient==='function'?tSupabaseClient():null;if(!c)throw new Error('Supabase är inte konfigurerat.');const r=await c.from('public_match_history').select('id,created_at,format,tournament,players,rounds').order('created_at',{ascending:false}).limit(30);if(r.error)throw r.error;renderHistoryRows(r.data||[]);}catch(e){$v('v41-history-list').innerHTML=`<div class="v41-card">Kunde inte hämta offentlig historik. Kontrollera att SQL-filen <b>supabase/v4.1-match-history.sql</b> har körts i Supabase. ${h(e.message||'')}</div>`;}
   }
   function renderHistoryRows(rows){const el=$v('v41-history-list');if(!el)return;if(!rows.length){el.textContent='Inga offentliga matcher ännu.';return;}el.innerHTML=rows.map((r,i)=>`<details class="v41-live"><summary><b>${r.tournament?'Turneringsmatch · ':''}${h(r.format||'Individuellt')}</b> · ${h(new Date(r.created_at).toLocaleString('sv-SE'))} · ${(r.rounds||[]).length} rundor</summary>${(r.rounds||[]).map(q=>`<div style="padding:9px 0;border-top:1px solid #d8d2c0"><b>${h(q.nr)}. ${h(q.question)}</b><p style="font-size:11px;color:#6A6558">Facit: ${h(q.referenceAnswer)}</p>${(q.answers||[]).map(a=>`<div style="margin:6px 0;padding:7px;background:#f7f4ec;border-radius:7px"><b>${h(a.name)} · ${h(a.score)} p</b><p style="white-space:pre-wrap;margin:4px 0">${h(a.answer||'(inget svar)')}</p><small>${h(a.feedback)} ${a.errors?'<br>Sakfel: '+h(a.errors):''}</small></div>`).join('')}</div>`).join('')}</details>`).join('');}
-  function renderHistoryLocal(){const el=$v('v41-history-list');if(!el)return;let rows=[];try{rows=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]');}catch(_){};if(!rows.length){el.textContent='Ingen lokal historik ännu.';return;}el.innerHTML=rows.map(r=>`<details class="v41-live"><summary>${h(r.format)} · ${h(new Date(r.created_at).toLocaleString('sv-SE'))}</summary>${(r.rounds||[]).map(q=>`<p><b>${h(q.question)}</b></p>${(q.answers||[]).map(a=>`<p>${h(a.name)} (${h(a.score)} p): ${h(a.answer)}<br><small>${h(a.feedback)}</small></p>`).join('')}`).join('')}</details>`).join('');}
+  async function renderHistoryLocal(){
+    const el=$v('v41-history-list');if(!el)return;el.textContent='Laddar lokal historik…';let rows=[];
+    try{
+      const db=await openLocalHistoryDb();
+      rows=await new Promise((resolve,reject)=>{const tx=db.transaction('matches','readonly');const req=tx.objectStore('matches').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error||new Error('Kunde inte läsa historiken'));});
+      if(!rows.length){let legacy=[];try{legacy=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]');}catch(_){};if(legacy.length){await new Promise((resolve,reject)=>{const tx=db.transaction('matches','readwrite'),store=tx.objectStore('matches');legacy.forEach((r,i)=>store.put({...r,matchId:r.matchId||('legacy-'+String(r.created_at||i)+'-'+i)}));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});rows=legacy.map((r,i)=>({...r,matchId:r.matchId||('legacy-'+String(r.created_at||i)+'-'+i)}));}
+    }}catch(_){try{rows=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]');}catch(__){rows=[];}}
+    if(!el.isConnected)return;
+    rows.sort((x,y)=>String(y.updated_at||y.created_at||'').localeCompare(String(x.updated_at||x.created_at||'')));
+    if(!rows.length){el.textContent='Ingen lokal historik ännu.';return;}
+    el.innerHTML=rows.map(r=>`<details class="v41-live"><summary>${h(r.format)} · ${h(new Date(r.created_at).toLocaleString('sv-SE'))}${r.completed===false?' · Pågående/autosparad':' · Sparad'}</summary>${(r.rounds||[]).map(q=>`<p><b>${h(q.question)}</b></p>${(q.answers||[]).map(a=>`<p>${h(a.name)} (${h(a.score)} p): ${h(a.answer)}<br><small>${h(a.feedback)}</small></p>`).join('')}`).join('')}${r.currentRound?`<div style="border-top:1px solid #d8d2c0;margin-top:8px;padding-top:8px"><b>Senast autosparad runda ${h(r.currentRound.nr)}: ${h(r.currentRound.question)}</b>${(r.currentRound.drafts||[]).map(d=>`<p>${h(d.name)}: ${h(d.answer||'(inget utkast)')}</p>`).join('')}</div>`:''}</details>`).join('');
+  }
 
 })();

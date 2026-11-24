@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flashcards v4.1 — plugga och tävla</title>
+<title>Flashcards v4.2 — plugga och tävla</title>
 <meta name="description" content="Läxförhör i historia och geografi. Skriv svaren med egna ord, en AI rättar och håller reda på vad du kan.">
 <meta name="theme-color" content="#1B2A5B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B2A5B'/%3E%3Cpath d='M16 5 L27 27 H5 Z' fill='%23C08423'/%3E%3Cpath d='M5 27 h22' stroke='%23EFEBDF' stroke-width='2'/%3E%3C/svg%3E">
@@ -1757,6 +1757,11 @@ function tHostData(c,m){
     const s=Object.values(T.sp).find(x=>x.id!=='h'&&x.token&&x.token===m.token);
     if(!s)return avvisa('Kunde inte återansluta. Gå med i ett nytt spel.');
     if(s.bortTimer)clearTimeout(s.bortTimer);
+    const previousConnection=s.conn;
+    if(previousConnection&&previousConnection!==c){
+      previousConnection._id=null;
+      try{previousConnection.close();}catch(e){}
+    }
     s.conn=c;s.frankopplad=false;c._id=s.id;
     try{c.send({t:'aterkommen',id:s.id,namn:s.namn});}catch(e){}
     tSkickaTill(c,tAktuellStatus(c));return;
@@ -1783,7 +1788,7 @@ function tNer(c){
     if(T.fas==='lobby')delete T.sp[s.id];
     else s.frankopplad=true;
     if(T&&T.fas==='lobby')tLobbyHost();
-  },90000);
+  },600000);
   if(T.fas==='lobby')tLobbyHost();else tKollaKlar();
 }
 function tLobbyHost(){
@@ -2076,6 +2081,7 @@ laddaPool().then(poolKlar);
 </script>
 <script src="konto.js"></script>
 <script src="flashcards-v41.js"></script>
+<script src="flashcards-v42-resume.js"></script>
 
 </body>
 </html>

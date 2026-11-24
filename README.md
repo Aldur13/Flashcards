@@ -1,4 +1,4 @@
-# Läxförhör — flashcards (historia och geografi)
+# Flashcards – läxförhör, lärande och tävling
 
 Ett läxförhör om de första flodkulturerna och om jordens inre och yttre krafter. Eleven skriver svaret med egna ord,
 en AI rättar mot facit, och appen håller reda på vilka frågor som sitter och
@@ -10,10 +10,9 @@ Appens gränssnitt är en statisk webbplats. Multiplayer använder PeerJS först
 Supabase Realtime som reserv; konto och offentlig matchhistorik använder också
 Supabase. Ingen egen server behöver byggas eller drivas av projektägaren.
 
-## Version 4.1 – lärande, lagspel och åskådare
+## Version 4.2 – återanslutning och autosparad matchhistorik
 
-Den här versionen lägger till ett separat `flashcards-v41.js` så att befintliga
-övnings- och konto-funktioner kan fortsätta användas utan att byggas om.
+Version 4.2 bygger vidare på funktionerna i v4.1 och lägger till ett separat `flashcards-v42-resume.js`.
 
 - **Smartare övning:** schemalagd repetition, dagens utmaning, nivå/kunskapsöversikt,
   märken, mörkt/ljust tema och ljudreglage.
@@ -28,7 +27,10 @@ Den här versionen lägger till ett separat `flashcards-v41.js` så att befintli
 - **Matchhistorik:** historiken sparas lokalt och kan publiceras anonymt med
   frågor, svar, poäng och AI-feedback. Publicering kräver samtycke från värden
   och alla spelare samt att värden är inloggad på ett konto.
-- **Versionsmärke:** `Flashcards v4.1` visas i nedre hörnet.
+- **Återanslutning för spelare:** varje spelare får en personlig återanslutningstoken som sparas lokalt i samma webbläsare. Om fliken eller hela webbläsaren stängs kan spelaren öppna Flashcards igen, välja **Gå med i spel** och trycka på **Återanslut till matchen**. Den senaste oskickade svarstexten sparas också lokalt och kan återställas.
+- **Längre reservplats:** en frånkopplad spelare behåller sin plats i lobbyn i upp till 10 minuter. Under en pågående match ligger spelarens plats kvar tills matchen avslutas, så spelaren kan återkomma senare.
+- **Historik autosparas:** värdens webbläsare uppdaterar sin lokala matchhistorik när rundor, utkast och svar ändras. Historiken innehåller färdiga rundor och den senast sparade pågående rundan. Samma match uppdateras i historiken i stället för att skapa dubbletter.
+- **Versionsmärke:** `Flashcards v4.2` visas i nedre hörnet.
 
 ### Aktivera offentlig matchhistorik
 
@@ -41,6 +43,15 @@ Den här versionen lägger till ett separat `flashcards-v41.js` så att befintli
    publiceringen i lobbyn. Det går att spela utan att publicera; då stannar historiken
    lokalt hos värden. Namn ersätts med deltagar- eller lagnamn och e-post, telefonnummer
    och länkar filtreras bort. Skriv ändå aldrig privata uppgifter i ett svar.
+
+
+### Återanslutning och autosparning i v4.2
+
+- Återanslutningstokenen sparas i spelarens `localStorage` i upp till 30 dagar. Den gäller i samma webbläsare och på samma enhet; privat läge, rensad webbplatsdata eller en annan enhet har inte den sparade tokenen.
+- Spelaren kan rensa sin sparade session via **Glöm sparad match** på sidan **Gå med i spel**.
+- Värdens webbläsare är fortfarande matchens auktoritet. Värden måste ha matchen öppen; om värdens flik stängs försvinner den aktiva matchen.
+- Autosparad matchhistorik lagras lokalt i IndexedDB på värdens enhet. De 25 senaste matcherna speglas också i localStorage som reserv. Det är inte en molnbackup. Offentlig Supabase-publicering är fortfarande separat och kräver samtycke från alla deltagare.
+- Det behövs ingen ny SQL-migration för v4.2-återanslutning eller lokal autosparning. `supabase/v4.1-match-history.sql` behövs fortfarande bara för offentlig matchhistorik.
 
 ### Multiplayer – viktiga begränsningar
 
@@ -59,17 +70,8 @@ Den här versionen lägger till ett separat `flashcards-v41.js` så att befintli
 - Matchhistorik är offentlig när den publiceras. Publicera bara när alla spelare
   förstår detta och har samtyckt. Anonymisering kan inte garantera att fritext
   aldrig innehåller ett personnamn eller annan identifierande detalj.
-- Funktionerna har fått statiska kodtester och transporttester, men inte ett
-  fullständigt test med många riktiga enheter och nätverk. Testa först med en
-  liten privat match innan en större tävling.
+- v4.2-ändringarna har inte testats i en riktig match med flera enheter. Kör först en liten privat match innan en större tävling.
 
-
-### Paketet och GitHub-versionen
-
-Den här ZIP-filen är byggd från en sparad projektkopia i arbetsytan. Jag har inte
-kunnat verifiera att den är byte-för-byte samma som GitHub-committen `b9c24d7`.
-Jämför/behåll därför eventuella nyare ändringar i GitHub innan du skriver över
-hela projektmappen med ZIP-innehållet.
 
 ## Vad som finns i appen
 
