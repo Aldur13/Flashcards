@@ -798,19 +798,29 @@ async function api(prompt,modelOverride,entry,extra){
       body.tool_choice='none';
     }
   }
-  let r;
-  try{ r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body)}); }
-  catch(e){
-    logAdd({prov:cfg.namn,model:useModel,url,status:'nätverksfel',error:e.message||'fetch misslyckades'});
-    throw new Error('Nådde inte '+cfg.namn+'. Kolla adressen, nätet eller att tjänsten tillåter anrop från webbläsaren.');
-  }
-  const rawText=await r.text();
+  let r,rawText;
+  const requestStarted=Date.now();
+  const controller=new AbortController();
+  const requestTimer=setTimeout(()=>controller.abort(),18000);
+  try{
+    r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body),signal:controller.signal});
+    rawText=await r.text();
+  }catch(e){
+    const timedOut=controller.signal.aborted;
+    const elapsed=Date.now()-requestStarted;
+    const message=timedOut?'AI-tjänsten svarade inte inom 18 sekunder.':'Nätverksfel: '+(e.message||'fetch misslyckades');
+    logAdd({prov:cfg.namn,model:useModel,url,status:timedOut?'timeout':'nätverksfel',durationMs:elapsed,error:message});
+    const err=new Error(timedOut?cfg.namn+': tidsgränsen på 18 sekunder överskreds.':'Nådde inte '+cfg.namn+'. Kolla adressen, nätet eller att tjänsten tillåter anrop från webbläsaren.');
+    err.timeout=timedOut;
+    throw err;
+  }finally{clearTimeout(requestTimer);}
+  const requestDuration=Date.now()-requestStarted;
   const snippet=rawText.slice(0,500);
   let d={};
   try{ d=JSON.parse(rawText); }catch(e){}
   if(!r.ok){
     const em=(d.error&&(d.error.message||d.error))||snippet||('HTTP '+r.status);
-    logAdd({prov:cfg.namn,model:useModel,url,status:r.status,error:em,snippet});
+    logAdd({prov:cfg.namn,model:useModel,url,status:r.status,durationMs:requestDuration,error:em,snippet});
     const txt=felText(r.status,em,cfg.namn,useModel);
     const err=new Error(txt);
     err.status=r.status;
@@ -820,7 +830,7 @@ async function api(prompt,modelOverride,entry,extra){
     if(err.nyckelfel&&!delad&&getSource()==='egen')setKeyBad(p,txt);
     throw err;
   }
-  logAdd({prov:cfg.namn,model:useModel,url,status:r.status,snippet});
+  logAdd({prov:cfg.namn,model:useModel,url,status:r.status,durationMs:requestDuration,snippet});
   if(!delad&&getSource()==='egen'&&keyBad(p))setKeyBad(p,'');
   if(cfg.shape==='anthropic'){
     if(!d.content) throw new Error('Tomt svar från '+cfg.namn+'.');
@@ -1941,7 +1951,7 @@ Ge betyg åt alla ${deltar.length} id.`;
   let sista;
   for(let f=0;f<2;f++){
     try{const r=await kampAI(f?prompt+'\n\nViktigt: svara med enbart JSON-objektet, ingen annan text.':prompt);return {betyg:tParse(r.text,deltar.map(d=>d.id)),sok:r.sok};}
-    catch(e){sista=e;if(e&&e.nyckelfel)break;}
+    catch(e){sista=e;if(e&&(e.nyckelfel||e.timeout))break;}
   }
   throw sista;
 }
