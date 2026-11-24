@@ -103,7 +103,7 @@ async function decrypt(uid: string, payload: Record<string, unknown>) {
 Deno.serve(async request => {
   const origin = request.headers.get("origin") || "https://aldur13.github.io";
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(origin) });
-  if (request.method !== "POST") return response({ error: "Method not allowed" }, 405);
+  if (request.method !== "POST") return response({ error: "Method not allowed" }, 405, origin);
 
   if (origin !== "https://aldur13.github.io" && !origin.startsWith("http://localhost:")) {
     return response({ error: "Origin not allowed" }, 403, origin);
@@ -115,12 +115,13 @@ Deno.serve(async request => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const authorization = request.headers.get("authorization") || "";
     const match = authorization.match(/^Bearer\s+(.+)$/i);
-    if (!supabaseUrl || !anonKey || !serviceKey || !match) {
+    const authApiKey = anonKey || request.headers.get("apikey") || "";
+    if (!supabaseUrl || !authApiKey || !serviceKey || !match) {
       return response({ error: "Inloggning krävs." }, 401, origin);
     }
 
     const userResponse = await fetch(supabaseUrl + "/auth/v1/user", {
-      headers: { apikey: anonKey, authorization: "Bearer " + match[1] },
+      headers: { apikey: authApiKey, authorization: "Bearer " + match[1] },
     });
     if (!userResponse.ok) return response({ error: "Sessionen är ogiltig. Logga in igen." }, 401, origin);
     const user = await userResponse.json();
@@ -160,7 +161,7 @@ Deno.serve(async request => {
     if (body.action === "delete") {
       const deleted = await fetch(rowUrl, { method: "DELETE", headers: restHeaders });
       if (!deleted.ok) return response({ error: "Kunde inte radera nyckelvalvet." }, 502, origin);
-      return response({ ok: true });
+      return response({ ok: true }, 200, origin);
     }
 
     return response({ error: "Okänd åtgärd." }, 400, origin);
