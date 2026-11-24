@@ -217,6 +217,7 @@
     if (kod === 'otp_expired') return 'Länken har gått ut eller är redan använd. Be om en ny.';
     if (kod === 'PGRST205' || kod === '42P01') return 'Molnet är inte färdiguppsatt än (supabase/setup.sql har inte körts).';
     if (status === 401 || status === 403) return 'Du har inte behörighet. Logga ut och in igen.';
+    if (status >= 500 && j && typeof j.error === 'string' && j.error.length <= 240) return j.error;
     if (status >= 500) return 'Servern svarar inte just nu. Försök igen om en stund.';
     return 'Något gick fel (' + status + ').';
   }
