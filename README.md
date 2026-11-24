@@ -361,3 +361,8 @@ obegränsad gratis TURN-server att förlita sig på. Databas-polling kräver en
 serverdel med säkra behörighetsregler och ska inte byggas genom att exponera
 alla spelares svar i en öppet skrivbar tabell. Om Realtime inte fungerar visas
 ett anslutningsfel i stället för att låtsas att en pollingreserv finns.
+
+
+### Tävla: avgränsning för poäng och lag
+
+Tävla behåller rundpoäng, matchresultat och tillfälliga lag i den enskilda matchen. Det finns ingen separat långsiktig ranking: inga Elo- eller spelarbetyg, divisioner, placeringsmatcher, globala topplistor, säsonger eller permanenta lagrankningar.

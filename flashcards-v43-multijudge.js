@@ -22,8 +22,7 @@
     const clean = rows.filter(x => x && PROV[x.prov] && x.prov !== 'custom' &&
       typeof x.key === 'string' && x.key.trim()).slice(0, 2)
       .map(x => ({ prov:x.prov, key:x.key.trim(), model:String(x.model || '').trim() }));
-    try { localStorage.setItem(STORAGE, JSON.stringify(clean)); } catch (_) {}
-    return clean;
+    try { localStorage.setItem(STORAGE, JSON.stringify(clean)); return true; } catch (_) { return false; }
   }
 
   function providerOptions(selected) {
@@ -79,7 +78,7 @@
       '<p style="font-size:12px;margin:0 0 9px;line-height:1.5">Den vanliga AI-nyckeln är domare 1. Lägg till upp till två extra domare från andra tjänster. De bedömer svaren var för sig; vid stor oenighet får en domare avgöra efter att ha granskat bedömningarna.</p>' +
       '<div id="v43-judge-rows"></div>' +
       '<p style="font-size:11px;color:#6a6558;margin:8px 0">Nycklarna sparas bara i den här webbläsaren och skickas direkt till respektive AI-tjänst. De delas inte med spelare och läggs inte i matchhistoriken. Den som använder samma enhet kan dock komma åt webbläsarens lagring. API-användning kan kosta pengar beroende på tjänst och konto.</p>' +
-      '<div class="row"><button type="button" class="act" id="v43-save">Spara extr domare</button><button type="button" class="act ghost" id="v43-clear">Rensa extra domare</button></div>' +
+      '<div class="row"><button type="button" class="act" id="v43-save">Spara extra domare</button><button type="button" class="act ghost" id="v43-clear">Rensa extra domare</button></div>' +
       '<p id="v43-msg" style="font-size:12px;margin:8px 0 0"></p>';
     panel.appendChild(box);
     renderRows();
@@ -89,16 +88,20 @@
         const key = $('v43-key-' + i).value.trim();
         if (key) rows.push({ prov:$('v43-prov-' + i).value, key, model:$('v43-model-' + i).value.trim() });
       }
-      saveJudges(rows);
-      $('v43-msg').textContent = rows.length + ' extra domare sparade på den här enheten.';
-      $('v43-msg').style.color = '#2e7d6e';
-      renderRows();
+      const saved = saveJudges(rows);
+      $('v43-msg').textContent = saved
+        ? rows.length + ' extra domare sparade på den här enheten.'
+        : 'Kunde inte spara domarna i webbläsaren. Kontrollera lagringsutrymmet och försök igen.';
+      $('v43-msg').style.color = saved ? '#2e7d6e' : '#a6462c';
+      if (saved) renderRows();
     };
     $('v43-clear').onclick = () => {
-      saveJudges([]);
-      renderRows();
-      $('v43-msg').textContent = 'Extra domare rensade. Tävla använder nu den vanliga AI-domaren.';
-      $('v43-msg').style.color = '#6a6558';
+      const cleared = saveJudges([]);
+      if (cleared) renderRows();
+      $('v43-msg').textContent = cleared
+        ? 'Extra domare rensade. Tävla använder nu den vanliga AI-domaren.'
+        : 'Kunde inte rensa domarna från webbläsarens lagring.';
+      $('v43-msg').style.color = cleared ? '#6a6558' : '#a6462c';
     };
   }
 
@@ -126,7 +129,9 @@
   function buildMedian(ids, results) {
     const out = {};
     ids.forEach(id => {
-      const judged = results.map(x => x.result.betyg[id]).filter(Boolean);
+      const judged = results.map(x => x.result && x.result.betyg && x.result.betyg[id])
+        .filter(x => x && Number.isFinite(x.poang));
+      if (!judged.length) throw new Error('Ingen giltig bedömning för svar ' + id + '.');
       const values = judged.map(x => x.poang);
       const mid = median(values);
       let chosen = judged[0];
@@ -163,9 +168,11 @@
 
   const baseTStart = tStart;
   tStart = function () {
-    const result = baseTStart.apply(this, arguments);
-    if (T && T.roll === 'host') T.v43JudgeConfig = readJudges();
-    return result;
+    // Freeze judge settings before the existing handler advances into round one.
+    if (T && T.roll === 'host') {
+      T.v43JudgeConfig = Object.freeze(readJudges().map(x => Object.freeze({ ...x })));
+    }
+    return baseTStart.apply(this, arguments);
   };
 
   tDomare = async function (kort, deltar, sek) {

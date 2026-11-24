@@ -8,9 +8,9 @@ const app = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const addon = fs.readFileSync(path.join(root, 'flashcards-v41.js'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase', 'v4.1-match-history.sql'), 'utf8');
 
-test('v4.1 is loaded as a separate script and shows the version badge', () => {
+test('v4.2 compatibility add-on is loaded and exposes its version badge', () => {
   assert.match(app, /<script src="flashcards-v41\.js"><\/script>/);
-  assert.match(addon, /const VERSION = '4\.1'/);
+  assert.match(addon, /const VERSION = '4\.2'/);
   assert.match(addon, /badge\.textContent='Flashcards v'\+VERSION/);
 });
 

@@ -1818,7 +1818,7 @@ function tNasta(){
 function tRundaVy(nr,tot,fraga){
   tPanel(`<div class="meta"><span class="chip">Runda ${nr} / ${tot}</span><span class="chip" id="tTid" style="font-size:15px"></span></div>
   <p class="q">${esc(fraga)}</p>
-  <textarea id="tSvar" maxlength="1200" placeholder="Skriv ett så fullständigt och korrekt svar du kan. Mer än facit ger högre poäng." style="width:100%;box-sizing:border-box;min-height:150px;padding:12px;border:1px solid #C9C3B2;border-radius:10px;font-size:16px;font-family:inherit"></textarea>
+  <textarea id="tSvar" maxlength="1200" placeholder="Besvara frågan korrekt. Utfyllnad ger inga extra poäng." style="width:100%;box-sizing:border-box;min-height:150px;padding:12px;border:1px solid #C9C3B2;border-radius:10px;font-size:16px;font-family:inherit"></textarea>
   <div class="row"><button class="act" id="tLas">Lås in svar</button></div>`);
   if(T&&T.roll==='klient'&&T.svarDraft)$('tSvar').value=T.svarDraft;
   $('tSvar').addEventListener('input',e=>{if(T&&T.roll==='klient')T.svarDraft=e.target.value.slice(0,1200);});
@@ -1895,7 +1895,7 @@ Ge betyg åt alla ${deltar.length} id.`;
 async function rattaRunda(){
   if(!T||T.roll!=='host'||T.fas!=='runda')return;
   T.fas='ratta';clearInterval(T.timer);
-  tSand({t:'rattar'});tPanel('<p class="q">Rättar…</p><p style="font-size:14px;color:#6A6558;line-height:1.5">Den starkaste AI:n faktagranskar alla svar. Det kan ta en halv minut.</p>');
+  tSand({t:'rattar'});tPanel('<p class="q">Rättar…</p><p style="font-size:14px;color:#6A6558;line-height:1.5">AI:n granskar alla svar utifrån frågan och facit. Det kan ta en halv minut.</p>');
   const deltar=Object.values(T.sp).filter(s=>s.id==='h'||s.conn||(s.id in T.svar)).map(s=>({id:s.id,namn:s.namn,text:String(T.svar[s.id]||'').trim().slice(0,1200)}));
   const med=deltar.filter(d=>d.text.length>1);
   let betyg={},sok=false;
@@ -2084,8 +2084,8 @@ laddaPool().then(poolKlar);
 </script>
 <script src="konto.js"></script>
 <script src="flashcards-v41.js"></script>
-<script src="flashcards-v43-multijudge.js"></script>
 <script src="flashcards-v42-resume.js"></script>
+<script src="flashcards-v43-multijudge.js"></script>
 
 </body>
 </html>
