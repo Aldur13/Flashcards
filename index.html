@@ -951,7 +951,8 @@ function shouldUseSharedFallback(error){
     status===402||status===403||status===404||status===408||status===429||status>=500);
 }
 async function accountVaultBackup(prompt,extra,excludeKeys,excludeProviders){
-  if(typeof window==='undefined'||typeof window.flashcardsAccountBackup!=='function')return null;
+  if(typeof window==='undefined'||typeof window.flashcardsAccountBackup!=='function'||
+    !window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE)return null;
   return window.flashcardsAccountBackup(prompt,extra||{},excludeKeys||[],excludeProviders||[]);
 }
 
