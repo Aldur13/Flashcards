@@ -225,3 +225,39 @@ test('SambaNova is available as an independent extra judge provider', async () =
   assert.equal(h.apiCalls[0].key, 'sambanova-test-key');
   assert.equal(h.apiCalls[0].model, 'GLM-5.3');
 });
+
+
+test('failed judges retain provider, model, timing and sanitized failure diagnostics', async () => {
+  const h = makeHarness({
+    extra: [
+      { prov: 'groq', key: 'bad-key', model: 'broken-model' },
+      { prov: 'anthropic', key: 'good-key', model: 'claude-model' }
+    ],
+    extraScores: { 'good-key': 90 },
+    failExtra: ['bad-key']
+  });
+  h.context.tStart();
+  const result = plain(await h.context.tDomare(card, players, 30));
+  assert.equal(result.judgeMeta.failures, 1);
+  const failed = result.judgeMeta.details.find(x => !x.lyckades);
+  assert.equal(failed.leverantor, 'Groq');
+  assert.equal(failed.modell, 'broken-model');
+  assert.equal(typeof failed.tidMs, 'number');
+  assert.match(failed.fel, /Extra judge failed/);
+  assert.equal(JSON.stringify(result.judgeMeta).includes('bad-key'), false);
+});
+
+test('all-failed rounds attach diagnostic details to the thrown error', async () => {
+  const h = makeHarness({
+    primaryFail: true,
+    extra: [{ prov: 'groq', key: 'bad-one', model: 'bad-model' }],
+    failExtra: ['bad-one']
+  });
+  h.context.tStart();
+  let caught;
+  try { await h.context.tDomare(card, players, 30); } catch (e) { caught = e; }
+  assert.ok(caught);
+  assert.equal(caught.judgeMeta.count, 0);
+  assert.equal(caught.judgeMeta.details.length, 2);
+  assert.equal(caught.judgeMeta.details.every(x => !x.lyckades), true);
+});
