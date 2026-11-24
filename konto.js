@@ -310,6 +310,7 @@
   }
   function lokalUtlogg(msg) {
     S.ses = null; LS.del(SES);
+    if (typeof window.flashcardsAccountVaultClear === 'function') window.flashcardsAccountVaultClear();
     clearTimeout(S.tim); clearTimeout(S.retry);
     status('');
     S.msg = msg || ''; S.msgTyp = 'fel'; S.vy = 'in';
@@ -546,6 +547,7 @@
     var varIProfilen = profil() === pid;
     clearTimeout(S.tim); clearTimeout(S.retry);
     S.ses = null; LS.del(SES);
+    if (typeof window.flashcardsAccountVaultClear === 'function') window.flashcardsAccountVaultClear();
     rensaLokaltFor(ses);
     SS.del('jk-kontovy');
     SS.set('jk-kontomsg', meddelande);
@@ -656,6 +658,10 @@
   window.kontoRita = kontoRita;
   /* v4.1 match history: reuse the existing authenticated account session. */
   window.flashcardsGetAccessToken = function () { return token(); };
+  window.flashcardsAccountReady = function () { return !!(S.ses && aktiv()); };
+  window.flashcardsVaultRequest = function (payload) {
+    return authApi('/functions/v1/api-keys-vault', { method: 'POST', body: payload || {} });
+  };
 
   /* ── start ──────────────────────────────────────────────────────────────── */
   function rensaHash() {
