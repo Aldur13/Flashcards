@@ -265,6 +265,9 @@
     panel.appendChild(note);
   };
 
+  const versionBadge = $('v41-badge');
+  if (versionBadge) versionBadge.textContent = 'Flashcards v4.3';
+
   // The settings panel may be hidden when the script loads, but it already exists.
   injectSettings();
   const observer = new MutationObserver(injectSettings);
