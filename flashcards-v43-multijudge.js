@@ -341,7 +341,7 @@
       providers:results.map(x => x.label), details
     };
     const finalResult = { betyg:scores, sok:results.some(x => !!x.result.sok) };
-    finalResult.judgeMeta=lastMeta;
+    if (extras.length) finalResult.judgeMeta=lastMeta;
     return finalResult;
   };
 
