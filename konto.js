@@ -25,6 +25,7 @@
     vanta: 1500
   };
   if (window.KONTO_CFG && typeof window.KONTO_CFG === 'object') Object.assign(CFG, window.KONTO_CFG);
+  window.FLASHCARDS_SUPABASE_CONFIG = { url: CFG.url, key: CFG.key };
 
   var SES = 'jk-konto';
   var BAS = ['flodkulturer-v1', 'flod-amnen', 'glosor-set'];

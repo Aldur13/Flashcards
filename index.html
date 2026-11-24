@@ -221,6 +221,7 @@ th{font-weight:500;font-size:12px;color:#8A836F}
   <div id="modTavla" style="display:none;margin-top:14px"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="peerjs.min.js"></script>
 <script>
 const CARDS=[
@@ -1578,17 +1579,68 @@ function tala(t){
     const u=new SpeechSynthesisUtterance(t);u.lang='de-DE';u.rate=0.9;
     const v=speechSynthesis.getVoices().find(x=>x.lang&&x.lang.toLowerCase().indexOf('de')===0);if(v)u.voice=v;speechSynthesis.speak(u);}catch(e){}
 }
-/* ===== Tävla: värden är server och rättar med sin egen nyckel (P2P via WebRTC) ===== */
+/* ===== Tävla: värden är server och rättar med sin egen nyckel (PeerJS med Supabase Realtime som reserv) ===== */
 const TK='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 let T=null;
 function tNamn(s){return String(s||'').replace(/[\u0000-\u001f<>&"'`]/g,'').trim().slice(0,16);}
 function tKod(){return Array.from({length:5},()=>TK[Math.floor(Math.random()*TK.length)]).join('');}
-function tStang(){try{if(T){clearInterval(T.timer);if(T.peer)T.peer.destroy();}}catch(e){}T=null;}
+function tPeerOptions(){return {host:'0.peerjs.com',port:443,path:'/',secure:true,debug:1,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}],sdpSemantics:'unified-plan'}};}
+function tStang(){try{if(T){['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer','rtJoinTimer'].forEach(k=>{if(T[k])clearTimeout(T[k]);});if(T.timer)clearInterval(T.timer);if(T.rtJoinTimer)clearInterval(T.rtJoinTimer);if(T.rtChannel&&T.rtClient)tSupabaseClient()?.removeChannel(T.rtChannel);if(T.peer)T.peer.destroy();if(T.sp)Object.values(T.sp).forEach(s=>{if(s.bortTimer)clearTimeout(s.bortTimer);});}}catch(e){}T=null;}
+let T_SUPABASE_CLIENT=null;
+function tSupabaseClient(){
+  try{
+    const cfg=window.FLASHCARDS_SUPABASE_CONFIG;
+    if(!cfg||!cfg.url||!cfg.key||!window.supabase||!window.supabase.createClient)return null;
+    if(!T_SUPABASE_CLIENT)T_SUPABASE_CLIENT=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false},realtime:{params:{eventsPerSecond:10}}});
+    return T_SUPABASE_CLIENT;
+  }catch(e){return null;}
+}
+function tRtNyttId(){try{return crypto.randomUUID();}catch(e){return 'c'+Math.random().toString(36).slice(2)+Date.now().toString(36);}}
+function tRealtimeHost(state){
+  const client=tSupabaseClient();if(!client)return false;
+  try{
+    state.rtClient=client;state.rtClients={};
+    const channel=client.channel('jkflash-'+state.kod,{config:{broadcast:{self:false}}});state.rtChannel=channel;
+    channel.on('broadcast',{event:'game'},({payload})=>{
+      if(T!==state||!payload||payload.to!=='host'||typeof payload.from!=='string'||!payload.message)return;
+      let adapter=state.rtClients[payload.from];
+      if(!adapter){
+        adapter={open:true,_rtId:payload.from,send:m=>{if(!adapter.open)return;try{channel.send({type:'broadcast',event:'game',payload:{from:'host',to:payload.from,message:m}});}catch(e){}},close:()=>{if(!adapter.open)return;adapter.open=false;tNer(adapter);}};
+        state.rtClients[payload.from]=adapter;
+      }
+      tHostData(adapter,payload.message);
+    }).subscribe(status=>{if(T!==state)return;state.rtReady=status==='SUBSCRIBED';if(state.rtReady&&state.fas==='lobby'&&!state.signalReady)tLobbyHost();});
+    return true;
+  }catch(e){return false;}
+}
+function tRealtimeJoin(state){
+  const client=tSupabaseClient();if(!client||T!==state)return false;
+  if(state.peer){try{state.peer.destroy();}catch(e){}state.peer=null;}
+  ['aterTimer','anslutTimeout','connTimer','handshakeTimer','reconnectTimer'].forEach(k=>{if(state[k]){clearTimeout(state[k]);state[k]=null;}});state.retryPending=false;state.ateransluter=false;
+  try{
+    state.rtClient=client;state.rtClientId=tRtNyttId();state.transport='realtime';
+    const channel=client.channel('jkflash-'+state.kod,{config:{broadcast:{self:false}}});state.rtChannel=channel;
+    channel.on('broadcast',{event:'game'},({payload})=>{
+      if(T!==state||!payload||payload.to!==state.rtClientId||payload.from!=='host'||!payload.message)return;
+      const m=payload.message;
+      if(m&&['valkommen','aterkommen'].includes(m.t)){state.hasJoined=true;state.rtJoined=true;state.retries=0;if(state.rtJoinTimer){clearInterval(state.rtJoinTimer);state.rtJoinTimer=null;}}
+      tKlientData(m);
+    }).subscribe(status=>{
+      if(T!==state||status!=='SUBSCRIBED')return;
+      const conn={open:true,send:m=>{if(!conn.open)return;try{channel.send({type:'broadcast',event:'game',payload:{from:state.rtClientId,to:'host',message:m}});}catch(e){}},close:()=>{conn.open=false;}};
+      state.conn=conn;state.ateransluter=false;
+      const join=()=>{if(T!==state||state.hasJoined||!conn.open)return;conn.send(state.token?{t:'resume',token:state.token}:{t:'join',namn:state.namn});};
+      join();state.rtJoinTimer=setInterval(join,1800);
+      tPanel('<p class="q">Ansluten via reservsystem</p><p style="font-size:14px;color:#6A6558">Använder Supabase Realtime eftersom direktanslutningen inte fungerade.</p>');
+    });
+    return true;
+  }catch(e){return false;}
+}
 function tPanel(h){$('modTavla').innerHTML='<div class="panel">'+h+'</div>';}
 function tFel(m){tStang();tPanel(`<p class="q">Något gick snett</p><p style="font-size:14px;line-height:1.5">${esc(m)}</p><div class="row"><button class="act" id="tTill">Tillbaka</button></div>`);$('tTill').onclick=tMeny;}
 function tMeny(){
   tStang();
-  tPanel(`<p class="q" style="margin-bottom:6px">Tävla</p><p style="margin:0 0 14px;font-size:13px;color:#6A6558;line-height:1.5">Alla får samma fråga. Den starkaste AI:n faktagranskar svaren och ger 1–100 poäng. Värden rättar med sin egen nyckel, så de andra behöver ingen.</p>
+  tPanel(`<p class="q" style="margin-bottom:6px">Tävla</p><p style="margin:0 0 14px;font-size:13px;color:#6A6558;line-height:1.5">Alla får samma fråga. PeerJS används först och Supabase Realtime tar över om direktanslutningen inte fungerar. Värden rättar med sin egen AI-nyckel.</p>
   <div class="amne" id="tSkapa"><span class="an">Skapa spel<span class="am">Du blir värd och får en kod att dela</span></span><span style="font-size:22px">›</span></div>
   <div class="amne" id="tGa"><span class="an">Gå med i spel<span class="am">Skriv in koden från värden</span></span><span style="font-size:22px">›</span></div>`);
   $('tSkapa').onclick=tInst;$('tGa').onclick=tGaMed;
@@ -1600,7 +1652,7 @@ function tInst(){
   <p style="margin:0 0 10px;font-size:13px;color:#6A6558">Det är din nyckel som används för att rätta. Den lämnar aldrig din webbläsare.</p>
   <label style="font-size:14px">Tid per runda</label><select id="tTidV" class="ginp" style="font-size:15px;margin:4px 0 10px">${[30,60,90,120,180,300].map(s=>`<option value="${s}"${s===120?' selected':''}>${s>=60?(s/60)+' min':s+' sek'}${s===120?' (standard)':''}</option>`).join('')}</select>
   <label style="font-size:14px">Antal rundor</label><select id="tRund" class="ginp" style="font-size:15px;margin:4px 0 10px">${[1,2,3,5,7,10].map(n=>`<option value="${n}"${n===5?' selected':''}>${n}</option>`).join('')}</select>
-  <label style="font-size:14px">Högsta antal spelare</label><select id="tMax" class="ginp" style="font-size:15px;margin:4px 0 10px">${[2,3,4,6,8].map(n=>`<option value="${n}"${n===8?' selected':''}>${n}</option>`).join('')}</select>
+  <label style="font-size:14px">Högsta antal spelare</label><select id="tMax" class="ginp" style="font-size:15px;margin:4px 0 10px">${[2,3,4,6,8,12,16,20,24,30].map(n=>`<option value="${n}"${n===8?' selected':''}>${n}</option>`).join('')}</select>
   <p style="margin:6px 0 2px;font-size:14px">Frågor från</p>`;
   STRUKTUR.forEach(g=>g.kat.forEach(k=>{h+=`<label class="amne"><input type="checkbox" data-kat="${esc(k.namn)}" checked><span class="an">${esc(g.amne)}: ${esc(k.namn)}</span></label>`;}));
   h+=`<div id="tErr" class="err" style="display:none"></div><div class="row"><button class="act ghost" id="tTill">Tillbaka</button><button class="act" id="tGo"${nyckel?'':' disabled'}>Skapa</button></div>`;
@@ -1609,35 +1661,96 @@ function tInst(){
     if(!kat.length){$('tErr').textContent='Välj minst en kategori.';$('tErr').style.display='block';return;}
     tSkapa({sek:+$('tTidV').value,rundor:+$('tRund').value,max:+$('tMax').value,kat});};
 }
-function tSkapa(set){
-  if(typeof Peer==='undefined')return tFel('Anslutningsbiblioteket kunde inte laddas. Kolla nätet och ladda om sidan.');
+function tSkapa(set,forsok){
   tStang();
-  const kod=tKod();let peer;
-  try{peer=new Peer('jkflash-'+kod);}catch(e){return tFel('Kunde inte starta spelet.');}
-  T={roll:'host',kod,peer,set,sp:{h:{id:'h',namn:(profNamn()==='Min profil'?'Värd':tNamn(profNamn()))||'Värd',conn:null}},n:0,nr:0,fas:'lobby',svar:{},tot:{},fragor:[],q:null,timer:null,skickat:false};
-  peer.on('open',tLobbyHost);
-  peer.on('error',e=>{if(e.type==='unavailable-id'){return tSkapa(set);}tFel('Anslutningsfel ('+e.type+'). Prova igen.');});
-  peer.on('connection',c=>{c.on('data',m=>tHostData(c,m));c.on('close',()=>tNer(c));});
+  const kod=tKod();let peer=null;
+  if(typeof Peer!=='undefined'){try{peer=new Peer('jkflash-'+kod,tPeerOptions());}catch(e){peer=null;}}
+  const state=T={roll:'host',kod,peer,set,sp:{h:{id:'h',namn:(profNamn()==='Min profil'?'Värd':tNamn(profNamn()))||'Värd',conn:null}},n:0,nr:0,fas:'lobby',svar:{},tot:{},fragor:[],q:null,timer:null,skickat:false,signalReady:false,reconnectTimer:null,reconnectAttempts:0,hasOpened:false,rtReady:false};
+  const rtOK=tRealtimeHost(state);
+  if(!peer&&!rtOK)return tFel('Varken PeerJS eller Supabase Realtime kunde startas. Kontrollera nätverket.');
+  if(!peer){tPanel('<p class="q">Startar reservanslutning…</p><p style="font-size:14px;color:#6A6558">Spelet använder Supabase Realtime eftersom PeerJS inte kunde startas.</p>');return;}
+  function aterstallSignal(){
+    if(T!==state||!state.peer||state.peer.destroyed||state.signalReady||state.reconnectTimer)return;
+    const delay=Math.min(1200+state.reconnectAttempts*900,6000);
+    state.reconnectTimer=setTimeout(()=>{
+      state.reconnectTimer=null;
+      if(T!==state||state.signalReady||!state.peer||state.peer.destroyed)return;
+      state.reconnectAttempts++;
+      try{state.peer.reconnect();}
+      catch(e){aterstallSignal();}
+    },delay);
+  }
+  peer.on('open',()=>{
+    if(T!==state)return;
+    state.signalReady=true;state.hasOpened=true;state.reconnectAttempts=0;
+    if(state.reconnectTimer){clearTimeout(state.reconnectTimer);state.reconnectTimer=null;}
+    if(state.fas==='lobby')tLobbyHost();
+  });
+  peer.on('disconnected',()=>{if(T!==state)return;state.signalReady=false;aterstallSignal();});
+  peer.on('error',e=>{
+    if(T!==state)return;
+    if(e.type==='unavailable-id'&&!state.hasOpened&&(forsok||0)<5)return tSkapa(set,(forsok||0)+1);
+    if(e.type==='network'||e.type==='socket-error'||e.type==='socket-closed'||e.type==='disconnected'){
+      state.signalReady=false;aterstallSignal();return;
+    }
+    if(state.rtReady){state.signalReady=false;if(state.fas==='lobby')tLobbyHost();return;}
+    tFel('Anslutningsfel ('+e.type+'). Kontrollera nätet och försök igen.');
+  });
+  peer.on('connection',c=>{
+    if(T!==state){try{c.close();}catch(e){}return;}
+    c.on('data',m=>tHostData(c,m));
+    c.on('close',()=>tNer(c));
+    c.on('error',()=>tNer(c));
+  });
 }
 function tSpelare(){return Object.values(T.sp).filter(s=>s.id==='h'||(s.conn&&s.conn.open));}
 function tSand(m){tSpelare().forEach(s=>{if(s.conn)try{s.conn.send(m);}catch(e){}});}
 function tHostData(c,m){
   if(!T||T.roll!=='host'||!m||typeof m!=='object'||typeof m.t!=='string')return;
   try{if(JSON.stringify(m).length>6000)return;}catch(e){return;}
+  const avvisa=o=>{try{c.send({t:'avvisa',orsak:o});}catch(e){}setTimeout(()=>{try{c.close();}catch(e){}},400);};
   if(m.t==='join'&&!c._id){
-    const avvisa=o=>{try{c.send({t:'avvisa',orsak:o});}catch(e){}setTimeout(()=>{try{c.close();}catch(e){}},400);};
     if(T.fas!=='lobby')return avvisa('Spelet har redan startat.');
-    if(tSpelare().length>=T.set.max)return avvisa('Spelet är fullt.');
+    if(Object.keys(T.sp).length>=T.set.max)return avvisa('Spelet är fullt.');
     let n=tNamn(m.namn)||'Spelare';const b=n,tag=Object.values(T.sp).map(s=>s.namn);let i=2;while(tag.indexOf(n)>=0)n=b+' '+(i++);
-    const id='p'+(++T.n);c._id=id;T.sp[id]={id,namn:n,conn:c};
-    try{c.send({t:'valkommen',namn:n});}catch(e){}tLobbyHost();return;
+    const id='p'+(++T.n),token=tKod()+tKod();c._id=id;
+    T.sp[id]={id,namn:n,conn:c,token};c.send({t:'valkommen',namn:n,token});
+    tLobbyHost();return;
+  }
+  if(m.t==='resume'&&c._id&&T.sp[c._id]){
+    const s=T.sp[c._id];s.conn=c;s.frankopplad=false;try{c.send({t:'aterkommen',namn:s.namn});}catch(e){}tSkickaTill(c,tAktuellStatus(c));return;
+  }
+  if(m.t==='resume'&&!c._id){
+    const s=Object.values(T.sp).find(x=>x.id!=='h'&&x.token&&x.token===m.token);
+    if(!s)return avvisa('Kunde inte återansluta. Gå med i ett nytt spel.');
+    if(s.bortTimer)clearTimeout(s.bortTimer);
+    s.conn=c;s.frankopplad=false;c._id=s.id;
+    try{c.send({t:'aterkommen',namn:s.namn});}catch(e){}
+    tSkickaTill(c,tAktuellStatus(c));return;
   }
   if(!c._id||!T.sp[c._id])return;
   if(m.t==='svar'&&T.fas==='runda'&&m.nr===T.nr&&typeof m.text==='string'&&!(c._id in T.svar)){T.svar[c._id]=m.text.slice(0,1200);tKollaKlar();}
 }
+function tSkickaTill(c,m){try{if(c&&c.open&&m)c.send(m);}catch(e){}}
+function tAktuellStatus(c){
+  if(T.fas==='lobby')return {t:'lobby',namn:tSpelare().map(s=>s.namn),kod:T.kod};
+  if(T.fas==='runda')return {t:'runda',nr:T.nr,tot:T.fragor.length,fraga:T.q.q,sek:Math.max(1,Math.ceil((T.slut-Date.now())/1000)),inskickat:!!(c&&c._id&&T.svar&&Object.prototype.hasOwnProperty.call(T.svar,c._id))};
+  if(T.fas==='ratta')return {t:'rattar'};
+  if(T.fas==='visar')return T.senasteResultat;
+  if(T.fas==='slut')return {t:'slut',tab:Object.values(T.tot).sort((a,b)=>b.summa-a.summa)};
+  return null;
+}
 function tNer(c){
   if(!T||T.roll!=='host'||!c._id)return;
-  if(T.fas==='lobby')delete T.sp[c._id];else if(T.sp[c._id])T.sp[c._id].conn=null;
+  const s=T.sp[c._id];if(!s||s.conn!==c)return;
+  s.conn=null;
+  if(s.bortTimer)clearTimeout(s.bortTimer);
+  s.bortTimer=setTimeout(()=>{
+    if(!T||T.sp[s.id]!==s||s.conn)return;
+    if(T.fas==='lobby')delete T.sp[s.id];
+    else s.frankopplad=true;
+    if(T&&T.fas==='lobby')tLobbyHost();
+  },90000);
   if(T.fas==='lobby')tLobbyHost();else tKollaKlar();
 }
 function tLobbyHost(){
@@ -1669,7 +1782,11 @@ function tRundaVy(nr,tot,fraga){
   <p class="q">${esc(fraga)}</p>
   <textarea id="tSvar" maxlength="1200" placeholder="Skriv ett så fullständigt och korrekt svar du kan. Mer än facit ger högre poäng." style="width:100%;box-sizing:border-box;min-height:150px;padding:12px;border:1px solid #C9C3B2;border-radius:10px;font-size:16px;font-family:inherit"></textarea>
   <div class="row"><button class="act" id="tLas">Lås in svar</button></div>`);
-  $('tLas').onclick=tSkicka;tTimer();$('tSvar').focus();
+  if(T&&T.roll==='klient'&&T.svarDraft)$('tSvar').value=T.svarDraft;
+  $('tSvar').addEventListener('input',e=>{if(T&&T.roll==='klient')T.svarDraft=e.target.value.slice(0,1200);});
+  $('tLas').onclick=tSkicka;
+  $('tSvar').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();tSkicka();}});
+  tTimer();$('tSvar').focus();
 }
 function tTimer(){
   clearInterval(T.timer);
@@ -1685,7 +1802,7 @@ function tSkicka(){
   if(!T||T.skickat)return;
   const v=(($('tSvar')||{}).value||'').slice(0,1200);T.skickat=true;
   if(T.roll==='host'){T.svar.h=v;tKollaKlar();}
-  else if(T.conn&&T.conn.open)T.conn.send({t:'svar',nr:T.nr,text:v});
+  else {T.svarText=v;T.svarDraft=v;if(T.conn&&T.conn.open)T.conn.send({t:'svar',nr:T.nr,text:v});}
   const t=$('tSvar');if(t)t.disabled=true;const b=$('tLas');if(b){b.disabled=true;b.textContent='Inskickat – väntar på de andra…';}
 }
 function tKollaKlar(){if(T&&T.roll==='host'&&T.fas==='runda'&&tSpelare().every(s=>s.id in T.svar))rattaRunda();}
@@ -1756,7 +1873,7 @@ async function rattaRunda(){
   const tab=Object.values(T.tot).sort((a,b)=>b.summa-a.summa);
   T.fas='visar';
   const m={t:'resultat',nr:T.nr,tot:T.fragor.length,fraga:T.q.q,facit:T.q.a,rader,vinnare,tab,sok};
-  tSand(m);tResultat(m,true);
+  T.senasteResultat=m;tSand(m);tResultat(m,true);
 }
 function tResultat(m,host){
   const sorted=m.rader.slice().sort((a,b)=>b.poang-a.poang),sist=m.nr>=m.tot;
@@ -1782,32 +1899,128 @@ function tSlutVy(tab){
 function tGaMed(){
   const sn=profNamn()==='Min profil'?'':profNamn();
   tPanel(`<p class="q" style="margin-bottom:8px">Gå med i spel</p>
-  <input id="tKodIn" class="ginp" maxlength="8" placeholder="Spelkod" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:4px;margin-bottom:8px">
+  <input id="tKodIn" class="ginp" maxlength="5" placeholder="Spelkod (5 tecken)" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:4px;margin-bottom:8px">
   <input id="tNamnIn" class="ginp" maxlength="16" placeholder="Ditt namn" value="${esc(sn)}" autocomplete="off">
   <div id="tErr" class="err" style="display:none"></div><div class="row"><button class="act ghost" id="tTill">Tillbaka</button><button class="act" id="tGo">Gå med</button></div>`);
   $('tTill').onclick=tMeny;
-  $('tGo').onclick=()=>{const k=$('tKodIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8),n=tNamn($('tNamnIn').value);
-    if(k.length<4||!n){$('tErr').textContent='Skriv både kod och namn.';$('tErr').style.display='block';return;}tAnslut(k,n);};
+  $('tGo').onclick=()=>{const k=$('tKodIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5),n=tNamn($('tNamnIn').value);
+    if(k.length!==5||!n){$('tErr').textContent='Skriv hela spelkoden (5 tecken) och ditt namn.';$('tErr').style.display='block';return;}tAnslut(k,n);};
+  ['tKodIn','tNamnIn'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('tGo').click();}}));
 }
 function tAnslut(kod,namn){
-  if(typeof Peer==='undefined')return tFel('Anslutningsbiblioteket kunde inte laddas. Kolla nätet och ladda om sidan.');
-  tStang();tPanel('<p class="q">Ansluter…</p>');
-  let peer;try{peer=new Peer();}catch(e){return tFel('Kunde inte ansluta.');}
-  T={roll:'klient',peer,kod,fas:'ansluter',nr:0,skickat:false,timer:null,conn:null};
-  const gamla=T;setTimeout(()=>{if(T===gamla&&T.fas==='ansluter')tFel('Ingen kontakt med värden. Kolla koden och att värden har spelet öppet.');},15000);
-  peer.on('open',()=>{const c=peer.connect('jkflash-'+kod,{reliable:true});T.conn=c;
-    c.on('open',()=>c.send({t:'join',namn}));c.on('data',tKlientData);
-    c.on('close',()=>{if(T&&T.fas!=='slut'&&T.fas!=='ansluter')tFel('Anslutningen till värden bröts.');});});
-  peer.on('error',e=>tFel(e.type==='peer-unavailable'?'Hittade inget spel med den koden.':'Anslutningsfel ('+e.type+').'));
+  tStang();tPanel('<p class="q">Ansluter…</p><p style="font-size:14px;color:#6A6558">Försöker först med PeerJS och växlar automatiskt till Supabase Realtime om det behövs.</p>');
+  let peer=null;if(typeof Peer!=='undefined'){try{peer=new Peer(tPeerOptions());}catch(e){peer=null;}}
+  const state=T={roll:'klient',peer,kod,namn,fas:'ansluter',nr:0,skickat:false,timer:null,conn:null,token:'',aterForsok:0,ateransluter:false,signalReady:false,retryPending:false,retries:0,hasJoined:false,attemptId:0,connTimer:null,handshakeTimer:null,aterTimer:null,anslutTimeout:null,transport:'peerjs'};
+  if(!peer){if(!tRealtimeJoin(state))return tFel('PeerJS och Supabase Realtime är inte tillgängliga. Kontrollera nätverket.');return;}
+  function stoppaTimer(){
+    ['connTimer','handshakeTimer'].forEach(k=>{if(state[k]){clearTimeout(state[k]);state[k]=null;}});
+  }
+  function visaFel(){
+    if(T!==state)return;
+    tStang();
+    tPanel('<p class="q">Kunde inte ansluta till värden</p><p style="font-size:14px;line-height:1.5">Kontrollera att spelkoden är rätt och att värden fortfarande har spelet öppet. Anslutningen misslyckades efter flera försök.</p><div class="row"><button class="act ghost" id="tTill">Tillbaka</button><button class="act" id="tRetry">Försök igen</button></div>');
+    $('tTill').onclick=tMeny;$('tRetry').onclick=()=>tAnslut(kod,namn);
+  }
+  function aterforsok(anledning){
+    if(T!==state||state.fas==='slut'||state.retryPending||state.transport==='realtime')return;
+    stoppaTimer();state.ateransluter=false;
+    if(state.conn){const gammal=state.conn;state.conn=null;try{gammal.close();}catch(e){}}
+    if(state.retries>=3){if(tRealtimeJoin(state))return;}
+    if(!state.hasJoined&&state.retries>=7){visaFel();return;}
+    state.retries++;
+    state.retryPending=true;
+    const delay=Math.min(900+state.retries*700,5000);
+    if(!state.hasJoined){
+      tPanel('<p class="q">Ansluter till värden…</p><p style="font-size:14px;color:#6A6558">Försök '+state.retries+' av 7. '+esc(anledning||'Anslutningen väntar.')+'</p>');
+    }else{
+      tPanel('<p class="q">Återansluter…</p><p style="font-size:14px;color:#6A6558">Försöker återställa din plats i tävlingen. Dina inskickade svar sparas.</p>');
+    }
+    state.aterTimer=setTimeout(()=>{
+      state.aterTimer=null;state.retryPending=false;
+      if(T===state&&state.signalReady)koppla();
+      else if(T===state)aterstallSignal();
+    },delay);
+  }
+  function aterstallSignal(){
+    if(T!==state||!state.peer||state.peer.destroyed||state.signalReady||state.reconnectTimer)return;
+    state.reconnectTimer=setTimeout(()=>{
+      state.reconnectTimer=null;
+      if(T!==state||state.signalReady||!state.peer||state.peer.destroyed)return;
+      try{state.peer.reconnect();}catch(e){aterstallSignal();}
+    },1500);
+  }
+  function koppla(){
+    if(T!==state||!state.peer||state.peer.destroyed||state.fas==='slut'||!state.signalReady)return;
+    if(state.conn&&state.conn.open)return;
+    if(state.ateransluter||state.retryPending)return;
+    state.ateransluter=true;const attempt=++state.attemptId;
+    let c;try{c=state.peer.connect('jkflash-'+kod,{reliable:true});}
+    catch(e){state.ateransluter=false;aterforsok('Kunde inte starta anslutningen.');return;}
+    state.conn=c;
+    state.connTimer=setTimeout(()=>{
+      if(T===state&&state.conn===c&&!c.open)aterforsok('Värden svarade inte på anslutningsförsöket.');
+    },10000);
+    c.on('open',()=>{
+      if(T!==state||attempt!==state.attemptId)return;
+      if(state.connTimer){clearTimeout(state.connTimer);state.connTimer=null;}
+      state.ateransluter=false;
+      try{if(state.token)c.send({t:'resume',token:state.token});else c.send({t:'join',namn});}
+      catch(e){aterforsok('Kunde inte skicka anslutningsförfrågan.');return;}
+      state.handshakeTimer=setTimeout(()=>{
+        if(T===state&&state.conn===c&&!state.hasJoined)aterforsok('Värden bekräftade inte anslutningen.');
+      },7000);
+    });
+    c.on('data',m=>{
+      if(T!==state||attempt!==state.attemptId)return;
+      if(m&&['valkommen','aterkommen','lobby','runda','rattar','resultat','slut','avvisa'].includes(m.t)){
+        if(state.handshakeTimer){clearTimeout(state.handshakeTimer);state.handshakeTimer=null;}
+      }
+      if(m&&(['valkommen','aterkommen'].includes(m.t))){state.hasJoined=true;state.retries=0;}
+      tKlientData(m);
+    });
+    c.on('error',e=>{if(T===state&&state.conn===c)aterforsok('WebRTC-anslutningen misslyckades.');});
+    c.on('close',()=>{
+      if(T!==state||attempt!==state.attemptId||state.conn!==c)return;
+      state.conn=null;state.ateransluter=false;
+      if(state.fas!=='slut')aterforsok('Anslutningen stängdes.');
+    });
+  }
+  peer.on('open',()=>{
+    if(T!==state)return;
+    state.signalReady=true;
+    if(state.reconnectTimer){clearTimeout(state.reconnectTimer);state.reconnectTimer=null;}
+    if(state.anslutTimeout){clearTimeout(state.anslutTimeout);state.anslutTimeout=null;}
+    state.retries=0;koppla();
+  });
+  peer.on('disconnected',()=>{if(T!==state)return;state.signalReady=false;aterstallSignal();});
+  peer.on('error',e=>{
+    if(T!==state)return;
+    if(e.type==='peer-unavailable'||e.type==='network'||e.type==='socket-error'||e.type==='socket-closed'||e.type==='disconnected'||e.type==='webrtc'){
+      if(e.type==='network'||e.type==='socket-error'||e.type==='socket-closed'||e.type==='disconnected'){
+        state.signalReady=false;aterstallSignal();
+      }
+      aterforsok(e.type==='peer-unavailable'?'Värden hittades inte ännu.':'Nätverksanslutningen återställs.');return;
+    }
+    if(!state.hasJoined)visaFel();
+    else aterforsok('Anslutningen avbröts ('+e.type+').');
+  });
+  state.anslutTimeout=setTimeout(()=>{
+    if(T===state&&!state.signalReady)visaFel();
+  },20000);
 }
 function tKlientData(m){
   if(!T||T.roll!=='klient'||!m||typeof m!=='object'||typeof m.t!=='string')return;
   if(m.t==='avvisa'){return tFel(String(m.orsak||'Du kunde inte gå med.').slice(0,100));}
-  if(m.t==='valkommen'){T.fas='lobby';return;}
+  if(m.t==='valkommen'){T.fas='lobby';T.token=String(m.token||'');T.hasJoined=true;T.retries=0;return;}
+  if(m.t==='aterkommen'){T.ateransluter=false;T.hasJoined=true;T.retries=0;}
   if(m.t==='lobby'&&Array.isArray(m.namn)&&T.fas==='lobby'){
     tPanel(`<p style="margin:0;font-size:13px;color:#6A6558">Spelkod ${esc(String(m.kod||''))}</p><p class="q" style="margin:6px 0 10px">Väntar på att värden startar</p>${m.namn.slice(0,12).map(n=>`<div class="amne" style="cursor:default"><span class="an">${esc(String(n))}</span></div>`).join('')}`);return;}
   if(m.t==='runda'&&typeof m.fraga==='string'&&+m.sek>0&&+m.sek<=600){
-    T.fas='runda';T.nr=+m.nr;T.skickat=false;T.slut=Date.now()+(+m.sek)*1000;tRundaVy(+m.nr,+m.tot,m.fraga);return;}
+    if(+m.nr!==T.nr)T.svarDraft='';
+    T.fas='runda';T.nr=+m.nr;T.skickat=!!m.inskickat;T.slut=Date.now()+(+m.sek)*1000;tRundaVy(+m.nr,+m.tot,m.fraga);
+    if(m.inskickat){const a=$('tSvar'),b=$('tLas');if(a){a.value=T.svarText||'';a.disabled=true;}if(b){b.disabled=true;b.textContent='Inskickat – väntar på de andra…';}}
+    else if(T.svarText&&T.conn&&T.conn.open){T.conn.send({t:'svar',nr:T.nr,text:T.svarText});T.skickat=true;const a=$('tSvar'),b=$('tLas');if(a)a.disabled=true;if(b){b.disabled=true;b.textContent='Inskickat – väntar på de andra…';}}
+    return;}
   if(m.t==='rattar'){clearInterval(T.timer);T.fas='ratta';tPanel('<p class="q">Rättar…</p><p style="font-size:14px;color:#6A6558">AI:n faktagranskar svaren.</p>');return;}
   if(m.t==='resultat'&&Array.isArray(m.rader)&&Array.isArray(m.tab)){T.fas='visar';
     const s=x=>String(x==null?'':x);

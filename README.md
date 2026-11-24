@@ -261,3 +261,24 @@ sparas progressen också i molnet (Supabase), så att man kan fortsätta på en 
 
 **Senare steg:** uppladdning av frågepaket som JSON (med validering och privata paket), därefter AI-anrop via en
 serverfunktion och Supabase Realtime för Tävla.
+
+## Tävla: reservanslutning
+
+Tävla försöker först ansluta spelare direkt med PeerJS/WebRTC. Värden öppnar
+samtidigt en Supabase Realtime-kanal för samma femteckenskod. Om en spelares
+PeerJS-anslutning misslyckas efter flera försök växlar klienten automatiskt
+till Realtime-kanalen. Realtime använder samma spelmeddelanden och värden
+fortsätter att hantera svar och poäng. Supabase-konfigurationen återanvänds
+från `konto.js`; ingen extra API-nyckel behövs.
+
+Det här är en kostnadsfri reservväg inom Supabases gratiskvot, inte en garanti
+om obegränsad gratis drift. Supabase-projektets Realtime-kvoter och eventuella
+pausregler gäller. SDK:n laddas från jsDelivr, så reservvägen kräver att nätet
+tillåter den domänen.
+
+**TURN och databas-polling är inte aktiverade.** En tillförlitlig TURN-reläserver
+kräver en egen eller extern relätjänst; det finns ingen stabil, officiell och
+obegränsad gratis TURN-server att förlita sig på. Databas-polling kräver en
+serverdel med säkra behörighetsregler och ska inte byggas genom att exponera
+alla spelares svar i en öppet skrivbar tabell. Om Realtime inte fungerar visas
+ett anslutningsfel i stället för att låtsas att en pollingreserv finns.
