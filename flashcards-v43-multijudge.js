@@ -161,8 +161,15 @@
       '\nSvara ENDAST med JSON: {"betyg":[{"id":"...","poang":heltal 1-100,"kommentar":"högst 25 ord på svenska","fel":"sakfel eller tom sträng"}]}. Ge betyg åt alla id.';
   }
 
+  const baseTStart = tStart;
+  tStart = function () {
+    const result = baseTStart.apply(this, arguments);
+    if (T && T.roll === 'host') T.v43JudgeConfig = readJudges();
+    return result;
+  };
+
   tDomare = async function (kort, deltar, sek) {
-    const extras = readJudges();
+    const extras = T && Array.isArray(T.v43JudgeConfig) ? T.v43JudgeConfig : readJudges();
     if (!extras.length) {
       const result = await baseDomare(kort, deltar, sek);
       lastMeta = { count:1, configured:1, failures:0, range:0, adjudicated:false, providers:['Huvuddomaren'] };
