@@ -84,7 +84,20 @@ v4.3 lägger till en valfri domarpanel under **Plugga → AI**. Den vanliga AI-i
 - Resultatvyn visar hur många domare som svarade, om de var oense och om överdomaren användes.
 - Om inga extra domare är konfigurerade används den vanliga rättningen.
 
-Extra nycklar sparas i värdens webbläsares `localStorage`, inte i `keys.json`, GitHub eller matchhistoriken. De skickas direkt till respektive AI-leverantör och delas inte med spelarna. Den som har åtkomst till värdens webbläsare kan dock komma åt dem. Använd bara API-nycklar du har tillåtelse att använda och kontrollera leverantörens eventuella kostnader och gränser.
+Extra nycklar sparas i värdens webbläsares `localStorage`, inte i `keys.json`, GitHub eller matchhistoriken. De skickas till respektive AI-leverantör och delas inte med spelarna. SambaNova går via en egen Supabase Edge Function eftersom leverantören inte tillåter direkta webbläsaranrop med CORS. Nyckeln skickas till funktionen i anropet och vidarebefordras till SambaNova; funktionen sparar eller loggar den inte. Den som har åtkomst till värdens webbläsare kan dock komma åt lokalt sparade nycklar. Använd bara API-nycklar du har tillåtelse att använda och kontrollera leverantörens eventuella kostnader och gränser.
+
+### Aktivera SambaNova-proxyn
+
+SambaNova-proxyn behöver publiceras en gång i samma Supabase-projekt som appen redan använder. Koden ligger i `supabase/functions/sambanova-proxy/`, och funktionen är konfigurerad för att kunna anropas från appen utan Supabase-inloggning.
+
+Kör följande i repots rotmapp:
+
+```sh
+npx supabase login
+npx supabase functions deploy sambanova-proxy --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt
+```
+
+Efter publiceringen använder SambaNova-domaren automatiskt proxyn. API-nyckeln ligger fortfarande i värdens webbläsare och skickas bara med själva anropet; den behöver inte läggas in som en Supabase-hemlighet. Om funktionen inte är publicerad visar appen ett tydligt fel i stället för att försöka göra ett direktanrop som webbläsaren blockerar.
 
 **Viktigt:** AI-domare kan fortfarande göra misstag. Flera modeller är inte en garanti för korrekthet, särskilt om de bygger på liknande modeller eller samma felaktiga antaganden. Värden bör kunna granska resultat och använda överklagandefunktionen där den finns.
 

@@ -25,6 +25,7 @@ function makeHarness(options = {}) {
     gemini: { namn: 'Gemini', snabb: 'gemini-fast', stark: 'gemini-pro', starkast: 'gemini-pro', modeller: ['gemini-fast'] },
     sambanova: { namn: 'SambaNova', snabb: 'GLM-5.3', stark: 'gpt-oss-120b', starkast: 'gpt-oss-120b', modeller: ['GLM-5.3','MiniMax-M3.1-Flash','gemma-4-31B-it','gpt-oss-120b'] },
     groq: { namn: 'Groq', snabb: 'groq-fast', stark: 'groq-pro', starkast: 'groq-pro', modeller: ['groq-fast'] },
+    mistral: { namn: 'Mistral', snabb: 'mistral-small-latest', stark: 'mistral-small-latest', starkast: 'mistral-small-latest', modeller: ['mistral-small-latest','mistral-large-latest'] },
     anthropic: { namn: 'Anthropic', snabb: 'claude-fast', stark: 'claude-pro', starkast: 'claude-pro', modeller: ['claude-fast'] }
   };
   const state = { roll: 'host', sp: {} };
@@ -57,8 +58,14 @@ function makeHarness(options = {}) {
       if (ids.some(id => !scores[id])) throw new Error('Incomplete grading response');
       return scores;
     },
-    api: async (prompt, model, entry) => {
-      apiCalls.push({ prompt, model, key: entry && entry.key });
+    api: async (prompt, model, entry, extra) => {
+      apiCalls.push({ prompt, model, key: entry && entry.key, extra });
+      if (entry && entry.prov === 'mistral' && (options.tierDeniedModels || []).includes(model)) {
+        const error = new Error('This model is not available in your subscription tier');
+        error.status = 403;
+        error.providerError = 'This model is not available in your subscription tier';
+        throw error;
+      }
       if (prompt.includes('Du är överdomare')) {
         if (options.adjudicatorFail) throw new Error('Adjudicator failed');
         return gradeRaw(options.adjudicatorScore == null ? 77 : options.adjudicatorScore);
@@ -67,6 +74,19 @@ function makeHarness(options = {}) {
       const score = options.extraScores && options.extraScores[entry.key];
       if (score == null) throw new Error('No test score configured for key');
       return gradeRaw(score);
+    },
+    apiJudge: async (prompt, entry, model, extra) => {
+      const optionsForJudge = { ...(extra || {}), json: true };
+      try {
+        return await context.api(prompt, model, entry, optionsForJudge);
+      } catch (error) {
+        if (!entry || entry.prov !== 'mistral' || error.status !== 403 ||
+            !/tier_not_allowed|not available in your subscription tier/i.test(String(error.providerError || error.message || '')) ||
+            model === 'mistral-small-latest') throw error;
+        entry.model = 'mistral-small-latest';
+        return context.api(prompt, 'mistral-small-latest',
+          { ...entry, model: 'mistral-small-latest' }, optionsForJudge);
+      }
     },
     tDomare: async (kort, deltar, sek) => {
       const judged = await context.kampAI('independent-rubric-prompt');
@@ -98,6 +118,11 @@ test('the page loads scripts in safe order and all JavaScript sources parse', ()
   assert.match(addon, /Flashcards v4\.3/);
   assert.match(app, /Besvara frågan korrekt\. Utfyllnad ger inga extra poäng\./);
   assert.doesNotMatch(app, /Mer än facit ger högre poäng/);
+  assert.match(app, /functions\/v1\/sambanova-proxy/);
+  assert.match(app, /x-sambanova-api-key/);
+  assert.match(app, /body\.response_format=\{type:'json_object'\}/);
+  assert.match(app, /body\.tool_choice='none'/);
+  assert.match(app, /stark:'mistral-small-latest', starkast:'mistral-small-latest'/);
   new vm.Script(addon);
   for (const match of app.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
     const source = match[1].trim();
@@ -135,6 +160,7 @@ test('independent judges receive their own credentials and median scores are use
   assert.deepEqual(h.apiCalls.map(call => call.key), ['key-groq', 'key-claude']);
   assert.deepEqual(h.apiCalls.map(call => call.model), ['groq-model', 'claude-model']);
   assert.equal(h.apiCalls[0].prompt, h.apiCalls[1].prompt);
+  assert.equal(h.apiCalls[0].extra.json, true, 'all judge requests explicitly require JSON mode');
 });
 
 test('large judge disagreement invokes adjudication and uses its validated score', async () => {
@@ -226,6 +252,21 @@ test('SambaNova is available as an independent extra judge provider', async () =
   assert.equal(h.apiCalls[0].model, 'GLM-5.3');
 });
 
+
+test('Mistral automatically retries with Small when the selected Large model is not allowed', async () => {
+  const h = makeHarness({
+    extra: [{ prov: 'mistral', key: 'mistral-key', model: 'mistral-large-latest' }],
+    extraScores: { 'mistral-key': 88 },
+    tierDeniedModels: ['mistral-large-latest']
+  });
+  h.context.tStart();
+  const result = plain(await h.context.tDomare(card, players, 30));
+  assert.equal(result.judgeMeta.count, 2);
+  assert.deepEqual(h.apiCalls.map(call => call.model), ['mistral-large-latest', 'mistral-small-latest']);
+  const mistral = result.judgeMeta.details.find(x => x.leverantor === 'Mistral');
+  assert.equal(mistral.lyckades, true);
+  assert.equal(mistral.modell, 'mistral-small-latest');
+});
 
 test('failed judges retain provider, model, timing and sanitized failure diagnostics', async () => {
   const h = makeHarness({
