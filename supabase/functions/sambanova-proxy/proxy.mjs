@@ -4,7 +4,7 @@ const ALLOWED_BODY_FIELDS = ['model','messages','max_tokens','temperature','top_
 function jsonResponse(body,status,corsHeaders){
   return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json','Cache-Control':'no-store'}});
 }
-export async function handleSambaNovaProxy(request,fetchImpl=fetch){
+export async function handleSambaNovaProxy(request,fetchImpl=fetch,timeoutMs=12000){
   const origin=request.headers.get('origin')||'';
   const allowedOrigin=ALLOWED_ORIGINS.has(origin);
   const corsHeaders={'Vary':'Origin','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-sambanova-api-key, x-client-info','Access-Control-Max-Age':'86400'};
@@ -25,8 +25,32 @@ export async function handleSambaNovaProxy(request,fetchImpl=fetch){
   const payload={};for(const field of ALLOWED_BODY_FIELDS)if(Object.prototype.hasOwnProperty.call(input,field))payload[field]=input[field];
   if(payload.max_tokens!=null&&(!Number.isInteger(payload.max_tokens)||payload.max_tokens<1||payload.max_tokens>8192))
     return jsonResponse({error:{message:'max_tokens is outside the permitted range.'}},400,corsHeaders);
+  const controller=new AbortController();
+  let timer;
   try{
-    const upstream=await fetchImpl(UPSTREAM_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(payload)});
-    return new Response(await upstream.text(),{status:upstream.status,headers:{...corsHeaders,'Content-Type':upstream.headers.get('content-type')||'application/json','Cache-Control':'no-store'}});
-  }catch(_){return jsonResponse({error:{message:'Could not reach SambaNova.'}},502,corsHeaders);}
+    const upstreamRequest=(async()=>{
+      const upstream=await fetchImpl(UPSTREAM_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify(payload),
+        signal:controller.signal
+      });
+      return {upstream,body:await upstream.text()};
+    })();
+    const timeout=new Promise(resolve=>{
+      timer=setTimeout(()=>{
+        controller.abort();
+        resolve({timedOut:true});
+      },Math.max(1,Number(timeoutMs)||12000));
+    });
+    const outcome=await Promise.race([upstreamRequest,timeout]);
+    if(outcome&&outcome.timedOut){
+      return jsonResponse({error:{message:'SambaNova did not respond within the 12-second proxy limit.'}},504,corsHeaders);
+    }
+    return new Response(outcome.body,{status:outcome.upstream.status,headers:{...corsHeaders,'Content-Type':outcome.upstream.headers.get('content-type')||'application/json','Cache-Control':'no-store'}});
+  }catch(_){
+    return jsonResponse({error:{message:'Could not reach SambaNova.'}},502,corsHeaders);
+  }finally{
+    if(timer)clearTimeout(timer);
+  }
 }

@@ -533,9 +533,10 @@ function poolDoda(){
 function poolSkrivDoda(m){
   try{ localStorage.setItem('flod-pooldead',JSON.stringify(m)); }catch(e){}
 }
-function poolDodMarkera(id,orsak,upptagen){
+function poolDodMarkera(id,orsak,upptagen,cooldownMs){
   const m=poolDoda();
-  m[id]={orsak:orsak||'',tid:new Date().toISOString(),till:upptagen?Date.now()+5*60*1000:0};
+  const cooldown=Math.max(5000,Math.min(15*60*1000,Number(cooldownMs)||5*60*1000));
+  m[id]={orsak:orsak||'',tid:new Date().toISOString(),till:upptagen?Date.now()+cooldown:0};
   poolSkrivDoda(m);
 }
 function poolLevande(id){
@@ -611,7 +612,8 @@ let LOG=[];
 function logAdd(e){LOG.push({t:new Date().toLocaleTimeString(),...e});if(LOG.length>40)LOG.shift();}
 function logDump(){
   if(!LOG.length)return'Inga anrop gjorda än.';
-  return LOG.slice().reverse().map(l=>`[${l.t}] ${l.prov} · ${l.model}\nTid: ${l.durationMs==null?'—':l.durationMs+' ms'}\nURL: ${l.url}\nStatus: ${l.status}${l.error?'\nFEL: '+l.error:''}\n${l.snippet?'Svar: '+l.snippet:''}`).join('\n\n---\n\n');
+  return LOG.slice().reverse().map(l=>`[${l.t}] ${l.prov} · ${l.model}\nTid: ${l.durationMs==null?'—':l.durationMs+' ms'}\nURL: ${l.url}\nStatus: ${l.status}${l.retryAfterMs?'\nRetry-After: '+l.retryAfterMs+' ms':''}${l.error?'\nFEL: '+l.error:''}\n${l.snippet?'Svar: '+l.snippet:''}`).join('\n\n---\n\n');
+}
 }
 
 function felText(status,em,namn,model){
@@ -759,6 +761,15 @@ function render(){
 
 function nextCard(){prevId=cur?cur.id:null;sistaRattning=null;cur=pick();render();}
 
+function retryAfterMilliseconds(value){
+  if(!value)return 0;
+  const seconds=Number(value);
+  if(Number.isFinite(seconds)&&seconds>=0)return Math.min(15*60*1000,Math.max(1000,seconds*1000));
+  const date=Date.parse(value);
+  if(Number.isFinite(date))return Math.min(15*60*1000,Math.max(1000,date-Date.now()));
+  return 0;
+}
+
 async function api(prompt,modelOverride,entry,extra){
   const delad=!!entry;
   const p=delad?entry.prov:getProv(), cfg=PROV[p];
@@ -812,6 +823,7 @@ async function api(prompt,modelOverride,entry,extra){
     logAdd({prov:cfg.namn,model:useModel,url,status:timedOut?'timeout':'nätverksfel',durationMs:elapsed,error:message});
     const err=new Error(timedOut?cfg.namn+': tidsgränsen på 18 sekunder överskreds.':'Nådde inte '+cfg.namn+'. Kolla adressen, nätet eller att tjänsten tillåter anrop från webbläsaren.');
     err.timeout=timedOut;
+    err.network=!timedOut;
     throw err;
   }finally{clearTimeout(requestTimer);}
   const requestDuration=Date.now()-requestStarted;
@@ -820,10 +832,12 @@ async function api(prompt,modelOverride,entry,extra){
   try{ d=JSON.parse(rawText); }catch(e){}
   if(!r.ok){
     const em=(d.error&&(d.error.message||d.error))||snippet||('HTTP '+r.status);
-    logAdd({prov:cfg.namn,model:useModel,url,status:r.status,durationMs:requestDuration,error:em,snippet});
+    const retryAfterMs=retryAfterMilliseconds(r.headers.get('retry-after'));
+    logAdd({prov:cfg.namn,model:useModel,url,status:r.status,durationMs:requestDuration,retryAfterMs:retryAfterMs||undefined,error:em,snippet});
     const txt=felText(r.status,em,cfg.namn,useModel);
     const err=new Error(txt);
     err.status=r.status;
+    err.retryAfterMs=retryAfterMs;
     err.providerError=String(em);
     const tierDenied=r.status===403&&/tier_not_allowed|not available in your subscription tier/i.test(String(em));
     err.nyckelfel=(r.status===401||(r.status===403&&!tierDenied));
@@ -860,14 +874,26 @@ async function apiWithMistralFallback(prompt,model,entry,extra){
 async function apiJudge(prompt,entry,model,extra){
   const options={...(extra||{}),json:true};
   if(!entry&&getSource()==='delad')return apiPool(prompt,model,true,options);
-  return apiWithMistralFallback(prompt,model,entry,options);
+  try{
+    return await apiWithMistralFallback(prompt,model,entry,options);
+  }catch(error){
+    if(!shouldUseSharedFallback(error)||!harDelad())throw error;
+    try{
+      // Do not retry the failed extra judge's exact key.
+      return await apiPool(prompt,null,true,options,entry?[entry.key]:[]);
+    }catch(backupError){
+      error.backupError=backupError&&backupError.message?backupError.message:'Ingen reservdomare kunde svara.';
+      throw error;
+    }
+  }
 }
 
 /* Går igenom de delade nycklarna i tur och ordning. Blir en nyckel avvisad
    hoppar vi vidare till nästa, och den som svarar blir standard från och med då. */
-async function apiPool(prompt,model,starkast,extra){
-  const ordning=poolOrdning();
-  if(!ordning.length)throw new Error('Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
+async function apiPool(prompt,model,starkast,extra,excludeKeys){
+  const excluded=new Set((excludeKeys||[]).filter(x=>typeof x==='string'&&x));
+  const ordning=poolOrdning().filter(e=>!excluded.has(e.key));
+  if(!ordning.length)throw new Error(excluded.size?'Det finns inga alternativa delade nycklar för reservdomaren.':'Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
   let sist=null;
   for(let i=0;i<ordning.length;i++){
     const e=ordning[i];
@@ -879,12 +905,29 @@ async function apiPool(prompt,model,starkast,extra){
     }catch(err){
       sist=err;
       const st=err.status;
-      if(st===401||st===403||st===402||st===404){ poolDodMarkera(e.id,err.message,false); continue; }
-      if(st===429){ poolDodMarkera(e.id,err.message,true); continue; }
-      throw err;   // nätverk eller serverfel — det är inte nyckeln det är fel på
+      if(st===401||st===403||st===402||st===404){
+        poolDodMarkera(e.id,err.message,false);
+        continue;
+      }
+      if(st===429){
+        poolDodMarkera(e.id,err.message,true,err.retryAfterMs||30000);
+        continue;
+      }
+      if(err.timeout||err.network){
+        poolDodMarkera(e.id,err.message,true,err.retryAfterMs||60000);
+        continue;
+      }
+      throw err;
     }
   }
   throw sist||new Error('Ingen av de delade nycklarna fungerade.');
+}
+
+function shouldUseSharedFallback(error){
+  if(!error)return false;
+  const status=Number(error.status)||0;
+  return !!(error.nyckelfel||error.timeout||error.network||
+    status===402||status===403||status===404||status===408||status===429||status>=500);
 }
 
 let delatFallback=false;
@@ -892,10 +935,14 @@ async function callAI(prompt,model,starkast){
   if(getSource()==='delad')return apiPool(prompt,model,starkast);
   try{ return await api(prompt,model); }
   catch(e){
-    if(e&&e.nyckelfel&&harDelad()){
-      const t=await apiPool(prompt,null,starkast);
-      delatFallback=true;
-      return t;
+    if(shouldUseSharedFallback(e)&&harDelad()){
+      try{
+        const t=await apiPool(prompt,null,starkast);
+        delatFallback=true;
+        return t;
+      }catch(backupError){
+        e.backupError=backupError&&backupError.message?backupError.message:'Ingen reservnyckel svarade.';
+      }
     }
     throw e;
   }

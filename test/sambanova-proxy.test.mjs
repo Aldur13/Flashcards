@@ -26,3 +26,17 @@ test('proxy hides upstream network error details',async()=>{
  const r=await handleSambaNovaProxy(request('POST',{body:{model:'GLM-5.3',messages:[{role:'user',content:'hi'}]}}),async()=>{throw new Error('secret-bearing exception')});
  assert.equal(r.status,502);assert.doesNotMatch(await r.text(),/secret-bearing|test-sambanova-key/);
 });
+
+test('proxy aborts a slow SambaNova upstream and returns HTTP 504',async()=>{
+ let aborted=false;
+ const started=Date.now();
+ const r=await handleSambaNovaProxy(request('POST',{body:{model:'GLM-5.3',messages:[{role:'user',content:'hi'}]}}),async(_url,options)=>{
+  return await new Promise((_resolve,reject)=>{
+   options.signal.addEventListener('abort',()=>{aborted=true;reject(new Error('aborted'));},{once:true});
+  });
+ },10);
+ assert.equal(r.status,504);
+ assert.equal(aborted,true);
+ assert.match((await r.text()),/12-second proxy limit/);
+ assert.ok(Date.now()-started<1000);
+});

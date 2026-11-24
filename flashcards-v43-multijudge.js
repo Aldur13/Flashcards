@@ -32,7 +32,10 @@
       if (typeof LOG === 'undefined' || !Array.isArray(LOG)) return [];
       return LOG.slice(index).map(x => ({
         tid:x.t || '',
+        leverantor:x.prov || '',
+        modell:x.model || '',
         status:x.status == null ? '' : x.status,
+        retryAfterMs:x.retryAfterMs || 0,
         url:redactDiagnostic(x.url || ''),
         error:redactDiagnostic(x.error || ''),
         svar:redactDiagnostic(x.snippet || '')
@@ -386,7 +389,7 @@
       full.style.cssText='display:none;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;line-height:1.5;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin-top:8px;max-height:360px;overflow:auto';
       full.textContent=lastMeta.details.map(d=>{
         const head=(d.lyckades?'LYCKADES':'MISSLYCKADES')+' · '+d.domare+'\nLeverantör: '+d.leverantor+'\nModell: '+d.modell+'\nTid: '+d.tidMs+' ms'+(d.status?'\nStatus: '+d.status:'')+(d.fel?'\nFel: '+d.fel:'');
-        const api=(d.api||[]).map(a=>'\nAPI-anrop ['+a.tid+'] · status '+a.status+'\nURL: '+a.url+(a.error?'\nFel: '+a.error:'')+(a.svar?'\nSvar: '+a.svar:'')).join('\n');
+        const api=(d.api||[]).map(a=>'\nAPI-anrop ['+a.tid+']'+(a.leverantor?' · '+a.leverantor:'')+(a.modell?' / '+a.modell:'')+' · status '+a.status+(a.retryAfterMs?' · Retry-After '+a.retryAfterMs+' ms':'')+'\nURL: '+a.url+(a.error?'\nFel: '+a.error:'')+(a.svar?'\nSvar: '+a.svar:'')).join('\n');
         return head+api;
       }).join('\n\n────────────────────────\n\n');
       toggle.onclick=()=>{

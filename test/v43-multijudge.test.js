@@ -123,6 +123,11 @@ test('the page loads scripts in safe order and all JavaScript sources parse', ()
   assert.match(app, /body\.response_format=\{type:'json_object'\}/);
   assert.match(app, /body\.tool_choice='none'/);
   assert.match(app, /stark:'mistral-small-latest', starkast:'mistral-small-latest'/);
+  assert.match(app, /function shouldUseSharedFallback/);
+  assert.match(app, /err\\.retryAfterMs=retryAfterMs/);
+  assert.match(app, /poolDodMarkera\\(e\\.id,err\\.message,true,err\\.retryAfterMs\\|\\|30000\\)/);
+  assert.match(app, /apiPool\\(prompt,null,true,options,entry\\?\\[entry\\.key\\]:\\[\\]\\)/);
+  assert.match(app, /SambaNova did not respond/);
   new vm.Script(addon);
   for (const match of app.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
     const source = match[1].trim();
