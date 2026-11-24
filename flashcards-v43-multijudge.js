@@ -277,8 +277,8 @@
         : modelStarkast(getProv());
       const started=Date.now();
       const logStart=(typeof LOG !== 'undefined' && Array.isArray(LOG)) ? LOG.length : 0;
+      const adjudicatorEntry=reviewer.entry ? { ...reviewer.entry, model } : null;
       try {
-        const adjudicatorEntry=reviewer.entry ? { ...reviewer.entry, model } : null;
         const raw = await apiJudge(adjudicatorPrompt(kort,deltar,results), adjudicatorEntry, model, {maxTokens:3500});
         scores = tParse(raw, ids);
         adjudicated = true;
