@@ -1,4 +1,4 @@
-name: Deploy SambaNova proxy
+name: Deploy Supabase Edge Functions
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
       - claude/website-launch-setup-u4g39j
     paths:
       - "supabase/functions/sambanova-proxy/**"
+      - "supabase/functions/api-keys-vault/**"
       - "supabase/config.toml"
       - ".github/workflows/deploy-sambanova.yml"
 
@@ -33,7 +34,11 @@ jobs:
               exit 1
               ;;
           esac
-      - name: Deploy Supabase Edge Function
+      - name: Deploy SambaNova proxy
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: npx --yes supabase@latest functions deploy sambanova-proxy --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt --yes
+      - name: Deploy encrypted account API-key vault
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: npx --yes supabase@latest functions deploy api-keys-vault --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt --yes
