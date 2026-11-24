@@ -255,6 +255,17 @@
     const details = [];
     let primaryError = null;
 
+    function requestSummary(logStart, fallbackProvider, fallbackModel) {
+      const api = apiLogSince(logStart);
+      const providers = Array.from(new Set(api.map(x => x.leverantor).filter(Boolean)));
+      const models = api.map(x => x.modell).filter(Boolean);
+      return {
+        leverantor:providers.length ? providers.join(' → ') : fallbackProvider,
+        modell:models.length ? models[models.length - 1] : fallbackModel,
+        api
+      };
+    }
+
     async function runJudge(entry, label) {
       const started = Date.now();
       const logStart = (typeof LOG !== 'undefined' && Array.isArray(LOG)) ? LOG.length : 0;
@@ -263,19 +274,20 @@
       try {
         const result = await baseDomare(kort, deltar, sek);
         details.push({
-          domare:label, leverantor:entry ? PROV[entry.prov].namn : 'Huvuddomaren',
-          modell:activeJudge ? activeJudge.model : model, lyckades:true, tidMs:Date.now()-started,
-          api:apiLogSince(logStart)
+          domare:label,
+          ...requestSummary(logStart, entry ? PROV[entry.prov].namn : 'Huvuddomaren', activeJudge ? activeJudge.model : model),
+          lyckades:true, tidMs:Date.now()-started
         });
         results.push({ result, entry, label });
         return null;
       } catch (e) {
         const failure = {
-          domare:label, leverantor:entry ? PROV[entry.prov].namn : 'Huvuddomaren',
-          modell:activeJudge ? activeJudge.model : model, lyckades:false, tidMs:Date.now()-started,
+          domare:label,
+          ...requestSummary(logStart, entry ? PROV[entry.prov].namn : 'Huvuddomaren', activeJudge ? activeJudge.model : model),
+          lyckades:false, tidMs:Date.now()-started,
           status:e && e.status != null ? e.status : '',
           fel:redactDiagnostic(e && e.message ? e.message : e || 'Okänt fel'),
-          api:apiLogSince(logStart)
+          backupfel:e && e.backupError ? redactDiagnostic(e.backupError) : ''
         };
         details.push(failure);
         return e;
@@ -388,7 +400,7 @@
       const full=document.createElement('pre');
       full.style.cssText='display:none;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;line-height:1.5;background:#fff;border:1px solid #C9C3B2;border-radius:8px;padding:10px;margin-top:8px;max-height:360px;overflow:auto';
       full.textContent=lastMeta.details.map(d=>{
-        const head=(d.lyckades?'LYCKADES':'MISSLYCKADES')+' · '+d.domare+'\nLeverantör: '+d.leverantor+'\nModell: '+d.modell+'\nTid: '+d.tidMs+' ms'+(d.status?'\nStatus: '+d.status:'')+(d.fel?'\nFel: '+d.fel:'');
+        const head=(d.lyckades?'LYCKADES':'MISSLYCKADES')+' · '+d.domare+'\nLeverantör: '+d.leverantor+'\nModell: '+d.modell+'\nTid: '+d.tidMs+' ms'+(d.status?'\nStatus: '+d.status:'')+(d.fel?'\nFel: '+d.fel:'')+(d.backupfel?'\nReservförsök: '+d.backupfel:'');
         const api=(d.api||[]).map(a=>'\nAPI-anrop ['+a.tid+']'+(a.leverantor?' · '+a.leverantor:'')+(a.modell?' / '+a.modell:'')+' · status '+a.status+(a.retryAfterMs?' · Retry-After '+a.retryAfterMs+' ms':'')+'\nURL: '+a.url+(a.error?'\nFel: '+a.error:'')+(a.svar?'\nSvar: '+a.svar:'')).join('\n');
         return head+api;
       }).join('\n\n────────────────────────\n\n');

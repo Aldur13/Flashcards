@@ -39,8 +39,8 @@ export async function handleSambaNovaProxy(request,fetchImpl=fetch,timeoutMs=120
     })();
     const timeout=new Promise(resolve=>{
       timer=setTimeout(()=>{
-        controller.abort();
         resolve({timedOut:true});
+        controller.abort();
       },Math.max(1,Number(timeoutMs)||12000));
     });
     const outcome=await Promise.race([upstreamRequest,timeout]);
