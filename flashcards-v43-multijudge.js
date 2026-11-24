@@ -13,6 +13,13 @@
     const keys = [];
     try { readJudges().forEach(x => { if (x.key) keys.push(x.key); }); } catch (_) {}
     try { if (activeJudge && activeJudge.key) keys.push(activeJudge.key); } catch (_) {}
+    try {
+      if (typeof window !== 'undefined' && window.FLASHCARDS_ACCOUNT_VAULT && window.FLASHCARDS_ACCOUNT_VAULT.primary) {
+        Object.values(window.FLASHCARDS_ACCOUNT_VAULT.primary).forEach(rows => {
+          if (Array.isArray(rows)) rows.forEach(row => { if (row && row.key) keys.push(row.key); });
+        });
+      }
+    } catch (_) {}
     try { if (typeof getKey === 'function') { const k=getKey(); if (k) keys.push(k); } } catch (_) {}
     keys.forEach(key => { text = text.split(key).join('[API-nyckel dold]'); });
     return text.replace(/Bearer\s+\S+/gi, 'Bearer [dold]')
@@ -126,6 +133,17 @@
         const key = $('v43-key-' + i).value.trim();
         if (key) rows.push({ prov:$('v43-prov-' + i).value, key, model:$('v43-model-' + i).value.trim() });
       }
+      if (typeof window !== 'undefined' && window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE &&
+          typeof window.flashcardsSaveAccountJudges === 'function') {
+        window.flashcardsSaveAccountJudges(rows).then(() => {
+          $('v43-msg').textContent = rows.length + ' extra domare sparade krypterat på kontot.';
+          $('v43-msg').style.color = '#2e7d6e';
+        }).catch(error => {
+          $('v43-msg').textContent = error.message || 'Kunde inte spara domarna på kontot.';
+          $('v43-msg').style.color = '#a6462c';
+        });
+        return;
+      }
       const saved = saveJudges(rows);
       $('v43-msg').textContent = saved
         ? rows.length + ' extra domare sparade på den här enheten.'
@@ -134,6 +152,17 @@
       if (saved) renderRows();
     };
     $('v43-clear').onclick = () => {
+      if (typeof window !== 'undefined' && window.FLASHCARDS_ACCOUNT_VAULT_ACTIVE &&
+          typeof window.flashcardsSaveAccountJudges === 'function') {
+        window.flashcardsSaveAccountJudges([]).then(() => {
+          $('v43-msg').textContent = 'Extra domare rensade från kontot.';
+          $('v43-msg').style.color = '#6a6558';
+        }).catch(error => {
+          $('v43-msg').textContent = error.message || 'Kunde inte rensa domarna.';
+          $('v43-msg').style.color = '#a6462c';
+        });
+        return;
+      }
       const cleared = saveJudges([]);
       if (cleared) renderRows();
       $('v43-msg').textContent = cleared
@@ -373,7 +402,7 @@
 
   // The settings panel may be hidden when the script loads, but it already exists.
   injectSettings();
-  window.flashcardsRenderJudges = renderRows;
+  if (typeof window !== 'undefined') window.flashcardsRenderJudges = renderRows;
   const observer = new MutationObserver(injectSettings);
   observer.observe(document.body, { childList:true, subtree:true });
 })();
