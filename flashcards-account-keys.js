@@ -8,7 +8,7 @@
   let loaded = false;
   let activeKeyOverride = null;
   const safeText = value => String(value == null ? '' : value).slice(0, 160);
-  const attr = value => String(value == null ? '' : value).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));
+  const attr = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
   const mask = key => key.length < 9 ? '••••••' : key.slice(0, 3) + '••••••' + key.slice(-3);
 
   function normalize(value) {
