@@ -26,6 +26,11 @@ jobs:
       - name: Run account and storage regression tests
         working-directory: test
         run: npm run test:account
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check SambaNova Edge Function
+        run: deno check supabase/functions/sambanova-proxy/index.ts
       - name: Check production JavaScript syntax
         run: |
           node --check flashcards-v41.js
