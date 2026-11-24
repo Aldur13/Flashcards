@@ -12,6 +12,7 @@
     let text = String(value == null ? '' : value);
     const keys = [];
     try { readJudges().forEach(x => { if (x.key) keys.push(x.key); }); } catch (_) {}
+    try { if (activeJudge && activeJudge.key) keys.push(activeJudge.key); } catch (_) {}
     try { if (typeof getKey === 'function') { const k=getKey(); if (k) keys.push(k); } } catch (_) {}
     keys.forEach(key => { text = text.split(key).join('[API-nyckel dold]'); });
     return text.replace(/Bearer\s+\S+/gi, 'Bearer [dold]')
