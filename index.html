@@ -461,8 +461,8 @@ const PROV={
    hint:'Nyckel från platform.openai.com.'},
  mistral:{namn:'Mistral',url:'https://api.mistral.ai/v1/chat/completions',shape:'openai',
    modeller:['mistral-small-latest','mistral-large-latest','open-mistral-nemo'],
-   snabb:'mistral-small-latest', stark:'mistral-large-latest', starkast:'mistral-large-latest',
-   hint:'Nyckel från console.mistral.ai. Har en gratis nivå med begränsad hastighet.'},
+   snabb:'mistral-small-latest', stark:'mistral-small-latest', starkast:'mistral-small-latest',
+   hint:'Nyckel från console.mistral.ai. Mistral Small används som standard; vilka modeller som går att använda beror på API-kontots nivå.'},
  hf:{namn:'Hugging Face',url:'https://router.huggingface.co/v1/chat/completions',shape:'openai',
    modeller:['mistralai/Mistral-Small-24B-Instruct-2501','meta-llama/Llama-3.3-70B-Instruct','Qwen/Qwen2.5-72B-Instruct'],
    snabb:'mistralai/Mistral-Small-24B-Instruct-2501', stark:'meta-llama/Llama-3.3-70B-Instruct', starkast:'Qwen/Qwen2.5-72B-Instruct',
@@ -616,7 +616,8 @@ function logDump(){
 
 function felText(status,em,namn,model){
   const e=String(em||'');
-  if(status===401||status===403)return 'Nyckeln godtogs inte av '+namn+'. Kontrollera att du kopierat hela nyckeln, utan mellanslag före eller efter, och att den hör till just '+namn+'.';
+  if(status===403&&/tier_not_allowed|not available in your subscription tier/i.test(e))return 'Modellen '+model+' är inte tillgänglig på den här API-nivån hos '+namn+'. En mindre modell kan fungera.';
+  if(status===401||status===403)return 'Nyckeln eller behörigheten godtogs inte av '+namn+'. Kontrollera API-nyckeln och att kontot har API-åtkomst.';
   if(status===429)return 'För många frågor just nu ('+namn+'). Vänta en halvminut och försök igen.';
   if(status===402||/quota|credit|billing|insufficient/i.test(e))return namn+' säger att kontot saknar krediter eller har nått sin gräns. Fyll på kontot, eller byt tjänst under fliken AI.';
   if(status===404||/model/i.test(e))return 'Modellen '+model+' finns inte hos '+namn+'. Välj en annan modell under fliken AI.';
@@ -762,8 +763,15 @@ async function api(prompt,modelOverride,entry,extra){
   const delad=!!entry;
   const p=delad?entry.prov:getProv(), cfg=PROV[p];
   const key=delad?entry.key:getKey();
-  const url=delad?cfg.url:getUrl();
+  const sbConfig=(p==='sambanova'&&typeof window!=='undefined')?window.FLASHCARDS_SUPABASE_CONFIG:null;
+  const proxyUrl=(sbConfig&&sbConfig.url)?String(sbConfig.url).replace(/\/$/,'')+'/functions/v1/sambanova-proxy':'';
+  const url=p==='sambanova'?proxyUrl:(delad?cfg.url:getUrl());
   const useModel=modelOverride||(delad?(entry.model||cfg.snabb||cfg.modeller[0]):getModel());
+  if(p==='sambanova'&&(!sbConfig||!sbConfig.url||!sbConfig.key)){
+    const message='SambaNova behöver att Supabase-proxyn är installerad. Följ instruktionerna i README.md och publicera Edge Function sambanova-proxy.';
+    logAdd({prov:cfg.namn,model:useModel,url:'(proxy saknas)',status:'—',error:message});
+    throw new Error(message);
+  }
   if(!url){logAdd({prov:cfg.namn,model:useModel,url:'(ingen)',status:'—',error:'Ingen adress angiven.'});throw new Error('Ingen adress angiven. Öppna fliken AI.');}
   if(!key && p!=='custom'){logAdd({prov:cfg.namn,model:useModel,url,status:'—',error:'Ingen nyckel angiven.'});throw new Error('Ingen API-nyckel angiven. Öppna fliken AI.');}
   let headers={"content-type":"application/json"}, body;
@@ -774,9 +782,21 @@ async function api(prompt,modelOverride,entry,extra){
     body={model:useModel,max_tokens:(extra&&extra.maxTokens)||1000,messages:[{role:"user",content:prompt}]};
     if(extra&&extra.search)body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:5}];
   }else{
-    if(key) headers["authorization"]="Bearer "+key;
+    if(p==='sambanova'){
+      headers["apikey"]=sbConfig.key;
+      headers["authorization"]="Bearer "+sbConfig.key;
+      headers["x-sambanova-api-key"]=key;
+    }else if(key) headers["authorization"]="Bearer "+key;
     body={model:useModel,max_tokens:(extra&&extra.maxTokens)||1000,messages:[{role:"user",content:prompt}]};
-    if(extra&&extra.search){if(p==='openrouter')body.model=useModel+':online';else if(p==='groq')body.tools=[{type:'browser_search'}];else throw new Error('Webbsökning stöds inte för den här leverantören.');}
+    if(extra&&extra.search){
+      if(p==='openrouter')body.model=useModel+':online';
+      else if(p==='groq'&&!(extra&&extra.json))body.tools=[{type:'browser_search'}];
+      else if(p!=='groq')throw new Error('Webbsökning stöds inte för den här leverantören.');
+    }
+    if(extra&&extra.json&&p==='groq'){
+      body.response_format={type:'json_object'};
+      body.tool_choice='none';
+    }
   }
   let r;
   try{ r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body)}); }
@@ -794,7 +814,9 @@ async function api(prompt,modelOverride,entry,extra){
     const txt=felText(r.status,em,cfg.namn,useModel);
     const err=new Error(txt);
     err.status=r.status;
-    err.nyckelfel=(r.status===401||r.status===403);
+    err.providerError=String(em);
+    const tierDenied=r.status===403&&/tier_not_allowed|not available in your subscription tier/i.test(String(em));
+    err.nyckelfel=(r.status===401||(r.status===403&&!tierDenied));
     if(err.nyckelfel&&!delad&&getSource()==='egen')setKeyBad(p,txt);
     throw err;
   }
@@ -809,16 +831,39 @@ async function api(prompt,modelOverride,entry,extra){
   return String(c).trim();
 }
 
+/* Domar-anrop får JSON-läge hos Groq. Vid Mistral-fel för kontonivå
+   provas Small automatiskt med samma API-nyckel. */
+function mistralTierDenied(error){
+  return !!(error&&error.status===403&&/tier_not_allowed|not available in your subscription tier/i.test(String(error.providerError||error.message||'')));
+}
+async function apiWithMistralFallback(prompt,model,entry,extra){
+  const provider=entry?entry.prov:getProv();
+  try{return await api(prompt,model,entry,extra);}
+  catch(error){
+    if(provider!=='mistral'||!mistralTierDenied(error)||model==='mistral-small-latest')throw error;
+    const fallback='mistral-small-latest';
+    if(entry&&!Object.isFrozen(entry))entry.model=fallback;
+    const retryEntry=entry?{...entry,model:fallback}:null;
+    return api(prompt,fallback,retryEntry,extra);
+  }
+}
+async function apiJudge(prompt,entry,model,extra){
+  const options={...(extra||{}),json:true};
+  if(!entry&&getSource()==='delad')return apiPool(prompt,model,true,options);
+  return apiWithMistralFallback(prompt,model,entry,options);
+}
+
 /* Går igenom de delade nycklarna i tur och ordning. Blir en nyckel avvisad
    hoppar vi vidare till nästa, och den som svarar blir standard från och med då. */
-async function apiPool(prompt,model,starkast){
+async function apiPool(prompt,model,starkast,extra){
   const ordning=poolOrdning();
   if(!ordning.length)throw new Error('Det finns inga delade nycklar. Lägg in en egen nyckel under fliken AI.');
   let sist=null;
   for(let i=0;i<ordning.length;i++){
     const e=ordning[i];
     try{
-      const t=await api(prompt,starkast?modelStarkast(e.prov):((model&&i===0)?model:null),e);
+      const chosenModel=starkast?modelStarkast(e.prov):((model&&i===0)?model:null);
+      const t=await apiWithMistralFallback(prompt,chosenModel,e,extra);
       poolSattStandard(e.id);
       return t;
     }catch(err){
@@ -1852,12 +1897,13 @@ function tKollaKlar(){if(T&&T.roll==='host'&&T.fas==='runda'&&tSpelare().every(s
 /* ---- rättningen: en enda faktagranskning för alla svar, så att poängen är jämförbara ---- */
 async function kampAI(prompt){
   const m=getSource()==='delad'?null:modelStarkast(getProv());
+  const search=getProv()!=='groq';
   if(getSource()!=='delad'){
-    try{return {text:await api(prompt,m,null,{maxTokens:3500,search:true}),sok:true};}
+    try{return {text:await apiJudge(prompt,null,m,{maxTokens:3500,search}),sok:search};}
     catch(e){if(e&&e.nyckelfel)throw e;}
-    return {text:await api(prompt,m,null,{maxTokens:3000}),sok:false};
+    return {text:await apiJudge(prompt,null,m,{maxTokens:3000}),sok:false};
   }
-  return {text:await callAI(prompt,m,true),sok:false};
+  return {text:await apiJudge(prompt,null,m,{maxTokens:3500}),sok:false};
 }
 function tParse(raw,ids){
   const m=String(raw).match(/\{[\s\S]*\}/);if(!m)throw new Error('AI:n svarade inte med JSON.');
