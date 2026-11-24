@@ -88,16 +88,27 @@ Extra nycklar sparas i värdens webbläsares `localStorage`, inte i `keys.json`,
 
 ### Aktivera SambaNova-proxyn
 
-SambaNova-proxyn behöver publiceras en gång i samma Supabase-projekt som appen redan använder. Koden ligger i `supabase/functions/sambanova-proxy/`, och funktionen är konfigurerad för att kunna anropas från appen utan Supabase-inloggning.
+SambaNova-proxyn publiceras som en Supabase Edge Function. Repot innehåller arbetsflödet
+`.github/workflows/deploy-sambanova.yml`, som publicerar funktionen automatiskt när
+proxykoden ändras och kan även köras manuellt.
 
-Kör följande i repots rotmapp:
+För att aktivera publiceringen en gång:
 
+1. Skapa en Supabase Personal Access Token för projektet.
+2. Öppna GitHub-repot och gå till **Settings → Secrets and variables → Actions**.
+3. Skapa en repository secret med namnet `SUPABASE_ACCESS_TOKEN` och klistra in tokenvärdet.
+4. Öppna fliken **Actions**, välj **Deploy SambaNova proxy** och kör **Run workflow**.
+
+Projekt-ID:t är redan angivet i arbetsflödet. Tokenen används bara av GitHub Actions
+vid publicering; den läggs inte i webbappen. SambaNova-nyckeln ska fortfarande anges
+i appens AI-inställningar och skickas vidare av proxyn utan att sparas på servern.
+Om Actions visar att publiceringen hoppades över saknas `SUPABASE_ACCESS_TOKEN`.
+
+Du kan också publicera manuellt från repots rotmapp med Supabase CLI:
 ```sh
 npx supabase login
 npx supabase functions deploy sambanova-proxy --project-ref cicxvhjydsmgnysbkjlu --no-verify-jwt
 ```
-
-Efter publiceringen använder SambaNova-domaren automatiskt proxyn. API-nyckeln ligger fortfarande i värdens webbläsare och skickas bara med själva anropet; den behöver inte läggas in som en Supabase-hemlighet. Om funktionen inte är publicerad visar appen ett tydligt fel i stället för att försöka göra ett direktanrop som webbläsaren blockerar.
 
 **Viktigt:** AI-domare kan fortfarande göra misstag. Flera modeller är inte en garanti för korrekthet, särskilt om de bygger på liknande modeller eller samma felaktiga antaganden. Värden bör kunna granska resultat och använda överklagandefunktionen där den finns.
 
