@@ -23,6 +23,7 @@ function makeHarness(options = {}) {
   const failures = new Set(options.failExtra || []);
   const prov = {
     gemini: { namn: 'Gemini', snabb: 'gemini-fast', stark: 'gemini-pro', starkast: 'gemini-pro', modeller: ['gemini-fast'] },
+    sambanova: { namn: 'SambaNova', snabb: 'GLM-5.3', stark: 'gpt-oss-120b', starkast: 'gpt-oss-120b', modeller: ['GLM-5.3','MiniMax-M3.1-Flash','gemma-4-31B-it','gpt-oss-120b'] },
     groq: { namn: 'Groq', snabb: 'groq-fast', stark: 'groq-pro', starkast: 'groq-pro', modeller: ['groq-fast'] },
     anthropic: { namn: 'Anthropic', snabb: 'claude-fast', stark: 'claude-pro', starkast: 'claude-pro', modeller: ['claude-fast'] }
   };
@@ -209,4 +210,18 @@ test('an unavailable adjudicator leaves the robust median intact', async () => {
   assert.equal(result.betyg.p1.poang, 60);
   assert.equal(result.judgeMeta.adjudicated, false);
   assert.equal(result.judgeMeta.range, 60);
+});
+
+test('SambaNova is available as an independent extra judge provider', async () => {
+  const h = makeHarness({
+    extra: [{ prov: 'sambanova', key: 'sambanova-test-key', model: 'GLM-5.3' }],
+    extraScores: { 'sambanova-test-key': 88 }
+  });
+  h.context.tStart();
+  const result = plain(await h.context.tDomare(card, players, 30));
+  assert.equal(result.betyg.p1.poang, 84);
+  assert.equal(result.judgeMeta.count, 2);
+  assert.equal(h.apiCalls.length, 1);
+  assert.equal(h.apiCalls[0].key, 'sambanova-test-key');
+  assert.equal(h.apiCalls[0].model, 'GLM-5.3');
 });
