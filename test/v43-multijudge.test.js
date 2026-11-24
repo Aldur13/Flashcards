@@ -75,6 +75,19 @@ function makeHarness(options = {}) {
       if (score == null) throw new Error('No test score configured for key');
       return gradeRaw(score);
     },
+    apiJudge: async (prompt, entry, model, extra) => {
+      const optionsForJudge = { ...(extra || {}), json: true };
+      try {
+        return await context.api(prompt, model, entry, optionsForJudge);
+      } catch (error) {
+        if (!entry || entry.prov !== 'mistral' || error.status !== 403 ||
+            !/tier_not_allowed|not available in your subscription tier/i.test(String(error.providerError || error.message || '')) ||
+            model === 'mistral-small-latest') throw error;
+        entry.model = 'mistral-small-latest';
+        return context.api(prompt, 'mistral-small-latest',
+          { ...entry, model: 'mistral-small-latest' }, optionsForJudge);
+      }
+    },
     tDomare: async (kort, deltar, sek) => {
       const judged = await context.kampAI('independent-rubric-prompt');
       return {
@@ -147,6 +160,7 @@ test('independent judges receive their own credentials and median scores are use
   assert.deepEqual(h.apiCalls.map(call => call.key), ['key-groq', 'key-claude']);
   assert.deepEqual(h.apiCalls.map(call => call.model), ['groq-model', 'claude-model']);
   assert.equal(h.apiCalls[0].prompt, h.apiCalls[1].prompt);
+  assert.equal(h.apiCalls[0].extra.json, true, 'all judge requests explicitly require JSON mode');
 });
 
 test('large judge disagreement invokes adjudication and uses its validated score', async () => {
