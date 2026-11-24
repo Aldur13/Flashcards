@@ -109,7 +109,9 @@ test('without extra judges the existing single-judge path is unchanged', async (
   h.context.tStart();
   const result = plain(await h.context.tDomare(card, players, 30));
   assert.equal(result.betyg.p1.poang, 80);
-  assert.deepEqual(result.judgeMeta, {
+  assert.equal(result.judgeMeta, undefined, 'the legacy return shape stays unchanged');
+  h.context.tSand({ t: 'resultat' });
+  assert.deepEqual(h.sent[0].judgeMeta, {
     count: 1, configured: 1, failures: 0, range: 0,
     adjudicated: false, providers: ['Huvuddomaren']
   });
