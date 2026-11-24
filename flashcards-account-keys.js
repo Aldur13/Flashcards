@@ -8,6 +8,7 @@
   let loaded = false;
   let activeKeyOverride = null;
   const safeText = value => String(value == null ? '' : value).slice(0, 160);
+  const attr = value => String(value == null ? '' : value).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));
   const mask = key => key.length < 9 ? '••••••' : key.slice(0, 3) + '••••••' + key.slice(-3);
 
   function normalize(value) {
@@ -158,8 +159,8 @@
       const row = vault.judges[i] || { prov: 'gemini', key: '', model: '' };
       html += '<div style="border-top:1px solid #C9C3B2;padding:9px 0"><b style="font-size:13px">Domare ' + (i + 2) + '</b>';
       html += '<label class="lbl">Leverantör</label><select id="account-judge-provider-' + i + '">' + providerOptions(row.prov) + '</select>';
-      html += '<label class="lbl">API-nyckel</label><input id="account-judge-key-' + i + '" type="password" autocomplete="new-password" value="' + esc(row.key) + '" placeholder="API-nyckel">';
-      html += '<label class="lbl">Modell (valfritt)</label><input id="account-judge-model-' + i + '" type="text" value="' + esc(row.model) + '" placeholder="Standardmodell används annars">';
+      html += '<label class="lbl">API-nyckel</label><input id="account-judge-key-' + i + '" type="password" autocomplete="new-password" value="' + attr(row.key) + '" placeholder="API-nyckel">';
+      html += '<label class="lbl">Modell (valfritt)</label><input id="account-judge-model-' + i + '" type="text" value="' + attr(row.model) + '" placeholder="Standardmodell används annars">';
       html += '</div>';
     }
     html += '<div class="row"><button class="act" type="button" id="account-key-save">Spara nyckelvalvet</button><button class="act ghost" type="button" id="account-key-clear">Rensa alla</button></div>';
