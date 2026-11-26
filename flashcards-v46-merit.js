@@ -31,6 +31,25 @@
     return o;
   }
 
+  function rensaTests(t) {
+    var o = {};
+    if (!t || typeof t !== 'object' || Array.isArray(t)) return o;
+    AMNEN.forEach(function (a) {
+      if (!Object.prototype.hasOwnProperty.call(t, a) || !Array.isArray(t[a])) return;
+      var l = [];
+      t[a].slice(0, 20).forEach(function (x) {
+        if (!x || typeof x !== 'object') return;
+        var mx = +x.max, p = +x.poang, v = x.vikt === undefined ? 1 : +x.vikt;
+        if (!isFinite(mx) || mx <= 0 || mx > 1000 || !isFinite(p) || p < 0 || p > mx) return;
+        if (!isFinite(v) || v < 0.1 || v > 10) v = 1;
+        var d = (typeof x.datum === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.datum)) ? x.datum : '';
+        l.push({ poang: Math.round(p * 100) / 100, max: Math.round(mx * 100) / 100, vikt: Math.round(v * 100) / 100, datum: d });
+      });
+      if (l.length) o[a] = l;
+    });
+    return o;
+  }
+
   function poang(b) { return Object.prototype.hasOwnProperty.call(POANG, b) ? POANG[b] : 0; }
 
   function berakna(grades) {
@@ -51,29 +70,45 @@
   function visaTal(n) { return String(n).replace('.', ','); }
 
   var API = { POANG: POANG, BETYG: BETYG, AMNEN: AMNEN, SPRAKVAL: SPRAKVAL, HEMSPRAK: HEMSPRAK, MAX: MAX,
-    rensa: rensa, poang: poang, berakna: berakna, vadOm: vadOm, visaTal: visaTal };
+    rensa: rensa, rensaTests: rensaTests, poang: poang, berakna: berakna, vadOm: vadOm, visaTal: visaTal };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  if (root) root.MeritCalc = API;
   if (!root || !root.document) return;
 
   /* ── gränssnitt ──────────────────────────────────────────────────────────── */
   var doc = root.document;
-  var sparade = {};          /* det som är sparat */
+  var sparade = {};          /* sparade betyg */
   var arbets = {};           /* det som visas (i vad-om-läge kan det skilja sig) */
+  var tests = {};            /* provresultat per ämne (används av fliken Prognos) */
   var vadomLage = false;
   var molnStatus = '';
   var sparTim = null;
+  var testsMoln = true;      /* false om kolumnen tests saknas i databasen (SQL v4.7 ej körd) */
+  var vy = 'betyg';
+  var vyer = [];             /* andra vyer som registrerar sig: Prognos, Jämför */
 
+  function kopia(o) { return JSON.parse(JSON.stringify(o)); }
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function el(id) { return doc.getElementById(id); }
   function uid() { return (typeof root.kontoInloggad === 'function' && root.kontoInloggad() && typeof root.kontoUid === 'function') ? root.kontoUid() : ''; }
   function lsNyckel() { return LS_NYCKEL + (uid() || 'lokal'); }
+  function lsTestNyckel() { return 'flashcards-merit-tests:' + (uid() || 'lokal'); }
   function lasLokalt() {
     try { return rensa(JSON.parse(root.localStorage.getItem(lsNyckel()) || '{}')); } catch (e) { return {}; }
   }
-  function sparaLokalt(g) { try { root.localStorage.setItem(lsNyckel(), JSON.stringify(g)); } catch (e) { /* inget */ } }
+  function lasLokaltTests() {
+    try { return rensaTests(JSON.parse(root.localStorage.getItem(lsTestNyckel()) || '{}')); } catch (e) { return {}; }
+  }
+  function sparaLokalt() {
+    try {
+      root.localStorage.setItem(lsNyckel(), JSON.stringify(sparade));
+      root.localStorage.setItem(lsTestNyckel(), JSON.stringify(tests));
+    } catch (e) { /* inget */ }
+  }
 
   function cfg() { return root.FLASHCARDS_SUPABASE_CONFIG || null; }
   async function moln(metod, kropp, fraga) {
@@ -89,30 +124,50 @@
     return metod === 'GET' ? r.json() : null;
   }
 
-  async function laddaMoln() {
-    if (!uid()) { molnStatus = 'Logga in för att spara betygen i molnet.'; return; }
+  var STATUS_OK = 'Sparas i ditt konto.';
+  var STATUS_UTAN_TESTS = 'Betygen sparas i ditt konto. Proven sparas bara på den här enheten tills SQL v4.7 har körts.';
+
+  /* Sparar betyg (och prov om databasen har kolumnen). */
+  async function skrivMoln() {
+    var kropp = { grades: sparade };
+    if (testsMoln) kropp.tests = tests;
     try {
-      var rader = await moln('GET', null, '?select=grades&limit=1');
+      await moln('POST', kropp, '?on_conflict=user_id');
+    } catch (e) {
+      if (!testsMoln) throw e;
+      await moln('POST', { grades: sparade }, '?on_conflict=user_id');
+      testsMoln = false;
+    }
+    molnStatus = testsMoln ? STATUS_OK : STATUS_UTAN_TESTS;
+  }
+
+  async function laddaMoln() {
+    if (!uid()) { molnStatus = 'Logga in för att spara i molnet.'; return; }
+    try {
+      var rader;
+      try { rader = await moln('GET', null, '?select=grades,tests&limit=1'); testsMoln = true; }
+      catch (e) { rader = await moln('GET', null, '?select=grades&limit=1'); testsMoln = false; }
       if (Array.isArray(rader) && rader[0]) {
         sparade = rensa(rader[0].grades);
-        sparaLokalt(sparade);
-      } else if (Object.keys(sparade).length) {
-        await moln('POST', { grades: sparade }, '?on_conflict=user_id');
+        if (testsMoln) tests = rensaTests(rader[0].tests);
+        sparaLokalt();
+      } else if (Object.keys(sparade).length || Object.keys(tests).length) {
+        await skrivMoln();
       }
-      molnStatus = 'Sparas i ditt konto.';
+      molnStatus = testsMoln ? STATUS_OK : STATUS_UTAN_TESTS;
     } catch (e) {
-      molnStatus = 'Molnet svarar inte just nu. Betygen sparas på den här enheten.';
+      molnStatus = 'Molnet svarar inte just nu. Allt sparas på den här enheten.';
     }
   }
 
   function sparaSenare() {
     clearTimeout(sparTim);
     sparTim = setTimeout(async function () {
-      sparaLokalt(sparade);
+      sparaLokalt();
       if (!uid()) return;
-      try { await moln('POST', { grades: sparade }, '?on_conflict=user_id'); molnStatus = 'Sparas i ditt konto.'; }
-      catch (e) { molnStatus = 'Kunde inte spara i molnet. Betygen finns kvar på den här enheten.'; }
-      var s = doc.getElementById('merit-status'); if (s) s.textContent = molnStatus;
+      try { await skrivMoln(); }
+      catch (e) { molnStatus = 'Kunde inte spara i molnet. Allt finns kvar på den här enheten.'; }
+      var s = el('merit-status'); if (s) s.textContent = molnStatus;
     }, 600);
   }
 
@@ -126,8 +181,7 @@
       '<select data-merit="' + esc(amne) + '" aria-label="Betyg i ' + esc(amne) + '" style="font-size:16px;padding:6px 8px;border-radius:8px">' + opt + '</select></div>';
   }
 
-  function rita() {
-    var p = doc.getElementById('v-merit'); if (!p) return;
+  function ritaBetyg(p) {
     var r = berakna(arbets), diffHtml = '';
     if (vadomLage) {
       var d = r.summa - berakna(sparade).summa;
@@ -141,26 +195,53 @@
       rad(SPRAKVAL, 'Moderna språk, ger 17:e betyget') +
       rad(HEMSPRAK, 'Räknas inte med i meritvärdet') +
       '<p id="merit-status" style="margin:12px 0 0;font-size:12px;color:#6A6558">' + esc(molnStatus) + '</p>';
-    doc.getElementById('merit-vadom').onchange = function (e) {
+    el('merit-vadom').onchange = function (e) {
       vadomLage = e.target.checked;
-      if (!vadomLage) arbets = JSON.parse(JSON.stringify(sparade));
+      if (!vadomLage) arbets = kopia(sparade);
       rita();
     };
     p.querySelectorAll('select[data-merit]').forEach(function (s) {
       s.onchange = function () {
         arbets[s.getAttribute('data-merit')] = s.value;
         arbets = rensa(arbets);
-        if (!vadomLage) { sparade = JSON.parse(JSON.stringify(arbets)); sparaSenare(); }
+        if (!vadomLage) { sparade = kopia(arbets); sparaSenare(); }
         rita();
       };
     });
   }
 
+  function rita() {
+    var p = el('v-merit'); if (!p) return;
+    var alla = [{ id: 'betyg', titel: 'Betyg' }].concat(vyer);
+    if (!alla.some(function (v) { return v.id === vy; })) vy = 'betyg';
+    var nav = alla.length > 1 ? '<div style="display:flex;gap:6px;margin:0 0 14px" id="merit-nav">' + alla.map(function (v) {
+      var pa = v.id === vy;
+      return '<button type="button" data-mv="' + esc(v.id) + '" aria-pressed="' + pa + '" style="flex:1;padding:8px 4px;font:inherit;font-size:14px;border-radius:8px;cursor:pointer;border:1px solid var(--ink);' +
+        (pa ? 'background:var(--ink);color:var(--lime)' : 'background:transparent;color:var(--ink)') + '">' + esc(v.titel) + '</button>';
+    }).join('') + '</div>' : '';
+    p.innerHTML = nav + '<div id="merit-vy"></div>';
+    p.querySelectorAll('button[data-mv]').forEach(function (b) {
+      b.onclick = function () { vy = b.getAttribute('data-mv'); rita(); };
+    });
+    var inne = el('merit-vy');
+    if (vy === 'betyg') { ritaBetyg(inne); return; }
+    vyer.forEach(function (v) { if (v.id === vy) v.rita(inne); });
+  }
+
+  /* Andra moduler (Prognos, Jämför) kopplar in sig här. */
+  root.MeritApp = {
+    registrera: function (id, titel, ritaFn) { vyer.push({ id: id, titel: titel, rita: ritaFn }); },
+    betyg: function () { return kopia(sparade); },
+    tests: function () { return kopia(tests); },
+    sattTests: function (t) { tests = rensaTests(t); sparaSenare(); },
+    rita: rita
+  };
+
   async function oppna() {
-    sparade = lasLokalt(); arbets = JSON.parse(JSON.stringify(sparade)); vadomLage = false;
+    sparade = lasLokalt(); arbets = kopia(sparade); tests = lasLokaltTests(); vadomLage = false;
     rita();
     await laddaMoln();
-    if (!vadomLage) { arbets = JSON.parse(JSON.stringify(sparade)); }
+    if (!vadomLage) { arbets = kopia(sparade); }
     rita();
   }
 
@@ -176,8 +257,7 @@
     var set = doc.getElementById('v-set'); set.parentNode.insertBefore(panel, set.nextSibling);
     /* views och show() finns i index.html */
     if (typeof views === 'undefined' || typeof show !== 'function') return; // eslint-disable-line no-undef
-    // eslint-disable-next-line no-undef
-    views.merit = ['t-merit', 'v-merit'];
+    views.merit = ['t-merit', 'v-merit']; // eslint-disable-line no-undef
     knapp.onclick = function () { show('merit'); oppna(); }; // eslint-disable-line no-undef
   }
 
