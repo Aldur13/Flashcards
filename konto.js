@@ -408,6 +408,10 @@
   };
   window.molnTvinga = function () { if (aktiv()) S.tvinga = true; };
   window.kontoSynka = synka;
+  /* Används av flashcards-v44-shared.js för att dela kort. */
+  window.kontoInloggad = function () { return !!S.ses; };
+  window.kontoUid = function () { return S.ses ? S.ses.uid : ''; };
+  window.kontoToken = function () { return token(); };
 
   /* ── profil på den här enheten ──────────────────────────────────────────── */
   function namnFranEpost(e) {

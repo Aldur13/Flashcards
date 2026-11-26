@@ -1,5 +1,19 @@
 # Flashcards – läxförhör, lärande och tävling
 
+## Delade kort (v4.4)
+
+Alla kort som laddas upp blir universella och kan användas i övning och tävling. Varje uppladdning måste klassas in i ett **ämne** (fast lista) och ett **område**.
+
+**Aktivera (ingen SQL Editor behövs):**
+1. På GitHub: Settings → Secrets and variables → Actions. `SUPABASE_ACCESS_TOKEN` (sbp_...) finns redan för edge-funktionerna.
+2. Actions → **Apply Supabase SQL** → Run workflow. Den kör `supabase/v4.4-shared-cards.sql` mot databasen och lägger in 53 biologikort.
+3. Ladda om sidan. Under fliken **AI** finns rutan **Dela kort med alla** (man måste vara inloggad för att dela).
+
+**Moderering:** sätt kolumnen `dolt` till `true` på en rad i Supabase → Table Editor → `shared_cards` för att gömma ett olämpligt kort för alla.
+
+Kort-id i appen är `100000 + nr` (molnsynken tillåter bara id upp till sex siffror).
+
+
 Ett läxförhör om de första flodkulturerna och om jordens inre och yttre krafter. Eleven skriver svaret med egna ord,
 en AI rättar mot facit, och appen håller reda på vilka frågor som sitter och
 vilka som behöver repeteras.
