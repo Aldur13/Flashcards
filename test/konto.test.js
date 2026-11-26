@@ -107,7 +107,8 @@ function boot(srv, { store = {}, sess = {}, hash = '', withKonto = true, confirm
   vc.on('jsdomError', e => { if (/navigation/i.test(e.message)) reloads++; else errors.push(e.message); });
   vc.on('error', e => errors.push(String(e)));
   let html = HTML.replace('<script src="peerjs.min.js"></script>', '');
-  html = html.replace('<script src="konto.js"></script>', withKonto ? '<script>' + KONTO + '</script>' : '');
+  /* index.html laddar konto.js med en cache-parameter (konto.js?v=...), så matcha med regex */
+  html = html.replace(/<script src="konto\.js[^"]*"><\/script>/, () => (withKonto ? '<script>' + KONTO + '</script>' : ''));
   const dom = new JSDOM(html, {
     url: 'https://aldur13.github.io/Flashcards/' + hash, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
