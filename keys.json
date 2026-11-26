@@ -1,0 +1,6 @@
+{
+  "las_mig": "Nycklarna i den har filen ar publika - alla som oppnar sidan kan lasa dem. Lagg BARA in gratisnycklar utan betalkort (console.groq.com, aistudio.google.com). Sidan provar nycklarna uppifran och ner: blir en avvisad hoppar den vidare till nasta.",
+  "format": { "namn": "namn som visas i listan", "prov": "groq | gemini | kimi | anthropic | openai | mistral | openrouter | hf", "key": "sjalva nyckeln", "model": "valfritt", "model2": "valfritt" },
+  "nycklar": [
+  ]
+}

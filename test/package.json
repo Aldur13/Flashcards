@@ -1,0 +1,17 @@
+{
+  "name": "kt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:tavla": "node --test tavla-transport.test.js",
+    "test": "node --test tavla-transport.test.js v41-features.test.js v43-multijudge.test.js v44-shared.test.js v45-distributed.test.js v46-merit.test.js v47-merit.test.js sambanova-proxy.test.mjs",
+    "test:account": "REPO=.. node konto.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsdom": "^31.0.1"
+  }
+}

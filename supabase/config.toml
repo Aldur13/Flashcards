@@ -1,0 +1,5 @@
+[functions.sambanova-proxy]
+verify_jwt = false
+
+[functions.api-keys-vault]
+verify_jwt = false
