@@ -80,7 +80,39 @@
     return kort;
   }
 
-  var test = { ren: ren, rensaKort: rensaKort, tolkaFil: tolkaFil, omradeOk: omradeOk, radTillKort: radTillKort, namnge: namnge, AMNEN: AMNEN };
+  /* Hur många kort i varje del. Små områden (högst 12 kort) blir en enda del; större delas
+     jämnt i delar om cirka 10, så att inget område får en pytteliten sista del. */
+  function delaIBitar(n) {
+    if (n <= 12) return [n];
+    var antal = Math.ceil(n / 10), bas = Math.floor(n / antal), extra = n % antal, ut = [];
+    for (var i = 0; i < antal; i++) ut.push(bas + (i < extra ? 1 : 0));
+    return ut;
+  }
+
+  /* Ger varje kort en del (k) inom sitt område (omr). Korten måste komma i nr-ordning. */
+  function delaIDelar(kort) {
+    var grupper = {}, ordning = [];
+    kort.forEach(function (c) {
+      var nyckel = c.amne + '\u0001' + c.k;
+      if (!grupper[nyckel]) { grupper[nyckel] = []; ordning.push(nyckel); }
+      grupper[nyckel].push(c);
+    });
+    ordning.forEach(function (nyckel) {
+      var g = grupper[nyckel], storlekar = delaIBitar(g.length), pos = 0;
+      storlekar.forEach(function (sz, i) {
+        for (var j = 0; j < sz; j++) {
+          g[pos].omr = g[pos].k;
+          g[pos].del = i + 1;
+          pos++;
+        }
+      });
+      var omr = g[0].k;
+      g.forEach(function (c) { c.k = storlekar.length > 1 ? omr + ' – del ' + c.del : omr; });
+    });
+    return kort;
+  }
+
+  var test = { delaIBitar: delaIBitar, delaIDelar: delaIDelar, ren: ren, rensaKort: rensaKort, tolkaFil: tolkaFil, omradeOk: omradeOk, radTillKort: radTillKort, namnge: namnge, AMNEN: AMNEN };
   if (typeof module !== 'undefined' && module.exports) { module.exports = test; }
   if (typeof document === 'undefined' || typeof CARDS === 'undefined') return;
 
@@ -155,25 +187,26 @@
     CARDS.forEach(function (c) { if (!upptagna[c.k]) upptagna[c.k] = 'inbyggt'; });
     STRUKTUR.forEach(function (g) { g.kat.forEach(function (k) { if (!upptagna[k.namn]) upptagna[k.namn] = 'inbyggt'; }); });
     var kort = rader.map(radTillKort).filter(Boolean);
-    namnge(kort, upptagna);
+    namnge(kort, upptagna);   /* unika områdesnamn */
+    delaIDelar(kort);         /* område -> delar (c.omr = område, c.k = del) */
     var ids = {};
     CARDS.forEach(function (c) { ids[c.id] = 1; });
     kort.forEach(function (c) { if (!ids[c.id]) { ids[c.id] = 1; CARDS.push(c); } });
-    /* områden per ämne i STRUKTUR */
+    /* ämne -> område -> delar i STRUKTUR */
     var perAmne = {};
     kort.forEach(function (c) {
-      var o = perAmne[c.amne] || (perAmne[c.amne] = []);
+      var a = perAmne[c.amne] || (perAmne[c.amne] = {}), o = a[c.omr] || (a[c.omr] = []);
       if (o.indexOf(c.k) < 0) o.push(c.k);
     });
     Object.keys(perAmne).sort(function (a, b) { return a.localeCompare(b, 'sv'); }).forEach(function (amne) {
       var g = STRUKTUR.filter(function (x) { return x.amne === amne; })[0];
       if (!g) { g = { amne: amne, kat: [] }; STRUKTUR.push(g); }
-      /* ett område per rad: tävlingsmenyn väljer på namn, så namnet måste vara unikt */
-      perAmne[amne].sort(function (a, b) { return a.localeCompare(b, 'sv'); }).forEach(function (k) {
-        g.kat.push({ namn: k, k: [k], delad: true });
+      /* ett område per rad (tävlingsmenyn väljer på namn, så namnet måste vara unikt) */
+      Object.keys(perAmne[amne]).forEach(function (omr) {
+        g.kat.push({ namn: omr, k: perAmne[amne][omr], delad: true });
       });
     });
-    delade = rader.map(radTillKort).filter(Boolean);
+    delade = kort;
     try { if (typeof ritaAmnesval === 'function' && $v('amnesval') && $v('amnesval').style.display === 'block') ritaAmnesval(); } catch (e) { /* inget */ }
   }
 
@@ -290,7 +323,7 @@
   function uppdateraForslag() {
     var dl = $v('v44-omraden'); if (!dl) return;
     var amne = $v('v44-amne').value, o = {};
-    delade.forEach(function (c) { if (c.amne === amne) o[c.k] = 1; });
+    delade.forEach(function (c) { if (c.amne === amne) o[c.omr || c.k] = 1; });
     dl.innerHTML = Object.keys(o).map(function (k) { return '<option value="' + esc(k) + '">'; }).join('');
   }
 

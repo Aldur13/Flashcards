@@ -80,6 +80,12 @@ th{font-weight:500;font-size:12px;color:#8A836F}
   .amnehead{margin:18px 0 4px;padding:9px 12px;border-radius:9px;background:var(--lapis);color:#fff;font-size:18px}
   .kathead{margin:10px 0 0;padding:7px 12px;border-radius:8px;background:var(--lime-2);color:var(--ink);font-size:15px}
   .amnehead span,.kathead span{font-family:inherit;font-size:11px;opacity:.75}
+  .hdrw{display:flex;gap:6px;align-items:stretch}
+  .hdrw-a{margin:18px 0 4px}.hdrw-k{margin:10px 0 0}
+  .hdrw .amnehead,.hdrw .kathead{margin:0;flex:1;width:auto}
+  .hdrw b{font-weight:600}
+  .selall{border:1px solid #C9C3B2;border-radius:8px;background:#fff;color:var(--ink);padding:0 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .grpbody[hidden]{display:none}
   .ginp{width:100%;box-sizing:border-box;padding:12px;border:1px solid #C9C3B2;border-radius:10px;font-size:18px;font-family:inherit;background:#fff;color:var(--ink)}
 </style>
 </head>
@@ -673,9 +679,21 @@ function amnenSvagastForst(){
 }
 
 let valTmp=[];
+let amnesOppna=new Set();
+/* Fäll ut de ämnen och områden där bara en del är vald; allt annat börjar ihopfällt. */
+function oppnaDelvalda(){
+  amnesOppna=new Set();
+  const antal=ks=>ks.filter(k=>valTmp.indexOf(k)>=0).length;
+  STRUKTUR.forEach(g=>{
+    const alla=[].concat(...g.kat.map(k=>k.k)),v=antal(alla);
+    if(v>0&&v<alla.length)amnesOppna.add('a:'+g.amne);
+    g.kat.forEach(kt=>{const w=antal(kt.k);if(w>0&&w<kt.k.length)amnesOppna.add('k:'+g.amne+'|'+kt.namn);});
+  });
+}
 function visaAmnesval(){
   audio();
   valTmp=valdaAmnen().slice();
+  oppnaDelvalda();
   $('amnesval').style.display='block';
   $('ovaKort').style.display='none';
   ritaAmnesval();
@@ -703,18 +721,24 @@ function ritaAmnesval(){
         <span class="am">${r.antal} frågor · du kan ${Math.round(r.niva*100)} procent</span></span>
       <span class="bar"><span style="width:${Math.round(r.niva*100)}%"></span></span>
     </label>`;};
-  const grp=(cls,txt,ks)=>`<button type="button" class="${cls}" data-ks="${encodeURIComponent(JSON.stringify(ks))}">${esc(txt)}<span>${ks.every(k=>valTmp.indexOf(k)>=0)?'välj bort alla':'välj alla'}</span></button>`;
+  const antalVald=ks=>ks.filter(k=>valTmp.indexOf(k)>=0).length;
+  const grp=(cls,txt,ks,key)=>{
+    const oppen=amnesOppna.has(key),v=antalVald(ks);
+    return `<div class="hdrw ${cls==='amnehead'?'hdrw-a':'hdrw-k'}"><button type="button" class="${cls}" data-tog="${esc(key)}" aria-expanded="${oppen}"><b>${oppen?'▾':'▸'} ${esc(txt)}</b><span>${v} av ${ks.length} valda</span></button><button type="button" class="selall" data-ks="${encodeURIComponent(JSON.stringify(ks))}">${v===ks.length?'välj bort':'välj alla'}</button></div>`;};
+  const kropp=(key,inre)=>`<div class="grpbody"${amnesOppna.has(key)?'':' hidden'}>${inre}</div>`;
   const anv=new Set();
   STRUKTUR.forEach(g=>{
     const alla=[].concat(...g.kat.map(k=>k.k)).filter(k=>rader.some(r=>r.k===k));
     if(!alla.length)return;
-    h+=grp('amnehead',g.amne,alla);
+    let inre='';
     g.kat.forEach(kt=>{const ks=kt.k.filter(k=>rader.some(r=>r.k===k));if(!ks.length)return;
-      h+=grp('kathead',kt.namn,ks);
-      ks.forEach(k=>{anv.add(k);const i=rader.findIndex(r=>r.k===k);h+=rad(rader[i],i);});});
+      const kk='k:'+g.amne+'|'+kt.namn;let rr='';
+      ks.forEach(k=>{anv.add(k);const i=rader.findIndex(r=>r.k===k);rr+=rad(rader[i],i);});
+      inre+=grp('kathead',kt.namn,ks,kk)+kropp(kk,rr);});
+    h+=grp('amnehead',g.amne,alla,'a:'+g.amne)+kropp('a:'+g.amne,inre);
   });
   const ovr=rader.filter(r=>!anv.has(r.k));
-  if(ovr.length){h+=grp('amnehead','Övrigt',ovr.map(r=>r.k));ovr.forEach(r=>{h+=rad(r,rader.indexOf(r));});}
+  if(ovr.length){h+=grp('amnehead','Övrigt',ovr.map(r=>r.k),'a:Övrigt')+kropp('a:Övrigt',ovr.map(r=>rad(r,rader.indexOf(r))).join(''));}
   h+=`<div class="row"><button class="act ghost" id="amAlla">Allt</button>${harData?'<button class="act ghost" id="amSvag">De tre svagaste</button>':''}</div>
   <div id="amErr" class="err" style="display:none">Kryssa i minst ett område.</div>
   <div class="row"><button class="act" id="amKlar">Börja öva</button></div>`;
@@ -725,8 +749,11 @@ function ritaAmnesval(){
       if(b.checked&&i<0)valTmp.push(k);
       if(!b.checked&&i>=0)valTmp.splice(i,1);
       $('amErr').style.display='none';
+      ritaAmnesval();
     };
   });
+  $('amnesval').querySelectorAll('button[data-tog]').forEach(b=>{b.onclick=()=>{audio();
+    const k=b.getAttribute('data-tog');if(amnesOppna.has(k))amnesOppna.delete(k);else amnesOppna.add(k);ritaAmnesval();};});
   $('amnesval').querySelectorAll('button[data-ks]').forEach(b=>{b.onclick=()=>{audio();
     const ks=JSON.parse(decodeURIComponent(b.getAttribute('data-ks')));const alla=ks.every(k=>valTmp.indexOf(k)>=0);
     valTmp=alla?valTmp.filter(k=>ks.indexOf(k)<0):valTmp.concat(ks.filter(k=>valTmp.indexOf(k)<0));ritaAmnesval();};});
@@ -1018,7 +1045,7 @@ async function check(){
   $('check').disabled=true;$('check').textContent='Rättar…';
   const shown=phrasing[cur.id]||cur.q;
   const lvl=st(cur.id).lvl;
-  const prompt=`Du rättar ett läxförhör i historia och geografi för en elev i årskurs 7.
+  const prompt=`Du rättar ett läxförhör för en elev i årskurs 7.
 
 FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven blir förhörd på, så de avgör vad som är viktigt och hur strängt du kräver täckning. Men facit är inte en lista att pricka av ord för ord: använd din egen kunskap om ämnet för att avgöra om det eleven skrivit är sant, och tänk själv istället för att bara jämföra texter.
 
@@ -1149,7 +1176,7 @@ async function provaOverklagan(){
   busy=true;$('ovSkicka').disabled=true;$('ovAvbryt').disabled=true;$('ovSkicka').textContent='Prövar…';
   const r=sistaRattning;
   const domar={ratt:'rätt',nastan:'nästan rätt',fel:'fel'}[r.verdict]||r.verdict;
-  const prompt=`Du är överdomare vid ett läxförhör i historia och geografi för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
+  const prompt=`Du är överdomare vid ett läxförhör för en elev i årskurs 7. En första AI har rättat elevens svar, och eleven har överklagat rättningen. Din uppgift är att pröva överklagandet sakligt och opartiskt.
 
 FACIT NEDAN KOMMER FRÅN ELEVENS EGNA FÖRELÄSNINGSANTECKNINGAR. Det är dessa anteckningar eleven förhörs på, så de avgör vad som är viktigt. Men facit är inte en lista att pricka av ord för ord — använd din egen kunskap om ämnet och tänk själv.
 ${r.kort.oppen?`
@@ -1842,7 +1869,9 @@ function tInst(){
   <label style="font-size:14px">Antal rundor</label><select id="tRund" class="ginp" style="font-size:15px;margin:4px 0 10px">${[1,2,3,5,7,10].map(n=>`<option value="${n}"${n===5?' selected':''}>${n}</option>`).join('')}</select>
   <label style="font-size:14px">Högsta antal spelare</label><select id="tMax" class="ginp" style="font-size:15px;margin:4px 0 10px">${[2,3,4,6,8,12,16,20,24,30].map(n=>`<option value="${n}"${n===8?' selected':''}>${n}</option>`).join('')}</select>
   <p style="margin:6px 0 2px;font-size:14px">Frågor från</p>`;
-  STRUKTUR.forEach(g=>g.kat.forEach(k=>{h+=`<label class="amne"><input type="checkbox" data-kat="${esc(k.namn)}" checked><span class="an">${esc(g.amne)}: ${esc(k.namn)}</span></label>`;}));
+  h+=`<p style="margin:0 0 6px;font-size:12px;color:#6A6558">Allt är förvalt. Fäll ut ett ämne för att välja bort områden.</p>`;
+  STRUKTUR.forEach(g=>{h+=`<details style="margin:4px 0"><summary style="cursor:pointer;font-family:'Fraunces',serif;font-size:16px;padding:6px 0">${esc(g.amne)} <span style="font-size:12px;color:#6A6558">· ${g.kat.length} ${g.kat.length===1?'område':'områden'}</span></summary>`+
+    g.kat.map(k=>`<label class="amne"><input type="checkbox" data-kat="${esc(k.namn)}" checked><span class="an">${esc(k.namn)}</span></label>`).join('')+`</details>`;});
   h+=`<div id="tErr" class="err" style="display:none"></div><div class="row"><button class="act ghost" id="tTill">Tillbaka</button><button class="act" id="tGo"${nyckel?'':' disabled'}>Skapa</button></div>`;
   tPanel(h);$('tTill').onclick=tMeny;
   $('tGo').onclick=()=>{const kat=[...$('modTavla').querySelectorAll('[data-kat]')].filter(b=>b.checked).map(b=>b.getAttribute('data-kat'));
@@ -2018,9 +2047,9 @@ function tParse(raw,ids){
   if(ids.some(i=>!ut[i]))throw new Error('AI:n gav inte betyg åt alla svar.');
   return ut;
 }
-async function tDomare(kort,deltar,sek){
+function domarPrompt(kort,deltar,sek){
   const data=JSON.stringify({fraga:kort.q,facit_ur_anteckningarna:kort.a,svar:deltar.map(d=>({id:d.id,text:d.text}))});
-  const prompt=`Du är domare i en tävling mellan elever i årskurs 7 (historia och geografi). Alla har fått samma fråga och haft ${sek} sekunder på sig.
+  const prompt=`Du är domare i en tävling mellan elever i årskurs 7 (olika skolämnen, till exempel historia, geografi och biologi). Alla har fått samma fråga och haft ${sek} sekunder på sig.
 
 UPPGIFT: ge varje svar ett självständigt, absolut poäng från 1 till 100. Bedöm inte svaren genom att rangordna dem och tvinga inte fram skillnader mellan deltagarna.
 
@@ -2043,6 +2072,10 @@ ${data}
 Svara ENDAST med ett JSON-objekt, ingen annan text:
 {"betyg":[{"id":"...","poang":heltal 1-100,"kommentar":"högst 25 ord på svenska, tilltala eleven med du","fel":"sakfel du hittade, annars tom sträng"}]}
 Ge betyg åt alla ${deltar.length} id.`;
+  return prompt;
+}
+async function tDomare(kort,deltar,sek){
+  const prompt=domarPrompt(kort,deltar,sek);
   let sista;
   for(let f=0;f<2;f++){
     try{const r=await kampAI(f?prompt+'\n\nViktigt: svara med enbart JSON-objektet, ingen annan text.':prompt);return {betyg:tParse(r.text,deltar.map(d=>d.id)),sok:r.sok};}
@@ -2255,6 +2288,7 @@ laddaPool().then(poolKlar);
 <script src="flashcards-v42-resume.js"></script>
 <script src="flashcards-v43-multijudge.js"></script>
 <script src="flashcards-v44-shared.js"></script>
+<script src="flashcards-v45-distributed-grading.js"></script>
 <script src="flashcards-account-keys.js?v=20261124-2055"></script>
 
 </body>

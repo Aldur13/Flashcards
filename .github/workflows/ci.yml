@@ -39,4 +39,5 @@ jobs:
           node --check flashcards-v42-resume.js
           node --check flashcards-v43-multijudge.js
           node --check flashcards-v44-shared.js
+          node --check flashcards-v45-distributed-grading.js
           node --check flashcards-account-keys.js

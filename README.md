@@ -1,5 +1,11 @@
 # Flashcards – läxförhör, lärande och tävling
 
+## Ämnesmeny med delar och spridd rättning (v4.5)
+
+**Ämnesvalet** under Öva är nu nedfällbart: *Ämne → Område → Delar* (till exempel Biologi → Andningen → del 1 och del 2). Rubrikerna visar "x av y valda", och knappen till höger väljer eller väljer bort allt i gruppen. Områden med fler än 12 kort delas automatiskt i jämna delar om cirka 10 kort. I tävlingsmenyn fäller man ut ett ämne och väljer områden.
+
+**Spridd rättning i tävlingar** (`flashcards-v45-distributed-grading.js`): spelare som har en egen nyckel hjälper värden att rätta. Värden delar upp svaren, ingen rättar sitt eget svar, och uteblir en hjälpare rättar värden själv. Nycklar skickas aldrig mellan spelare, bara frågan, facit och svaren. Man kan stänga av det under fliken AI.
+
 ## Delade kort (v4.4)
 
 Alla kort som laddas upp blir universella och kan användas i övning och tävling. Varje uppladdning måste klassas in i ett **ämne** (fast lista) och ett **område**.

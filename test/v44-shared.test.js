@@ -61,3 +61,25 @@ test('migration is public-read, login-to-write and hides cards via dolt', () => 
   assert.match(sql, /grant insert \(subject, category, q, a, oppen\)/);
   assert.equal((sql.match(/\('Biologi','/g) || []).length, 53);
 });
+
+test('large areas are split into even parts of about 10 cards; small ones stay whole', () => {
+  assert.deepEqual(v44.delaIBitar(7), [7]);
+  assert.deepEqual(v44.delaIBitar(12), [12]);
+  assert.deepEqual(v44.delaIBitar(18), [9, 9]);
+  assert.deepEqual(v44.delaIBitar(25), [9, 8, 8]);
+  for (let n = 13; n < 200; n++) {
+    const p = v44.delaIBitar(n);
+    assert.equal(p.reduce((a, b) => a + b, 0), n);
+    assert.ok(Math.max(...p) - Math.min(...p) <= 1 && Math.min(...p) >= 6);
+  }
+});
+
+test('cards get "område – del N" as their part, and keep the area in omr', () => {
+  const kort = Array.from({ length: 18 }, (_, i) => ({ amne: 'Biologi', k: 'Andningen', id: i }))
+    .concat([{ amne: 'Biologi', k: 'Levern', id: 99 }]);
+  v44.delaIDelar(kort);
+  assert.equal(kort[0].k, 'Andningen – del 1');
+  assert.equal(kort[17].k, 'Andningen – del 2');
+  assert.equal(kort[0].omr, 'Andningen');
+  assert.equal(kort[18].k, 'Levern');
+});
